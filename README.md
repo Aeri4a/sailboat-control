@@ -1,12 +1,12 @@
-### Sailboat control
+# Sailboat control
 
 ## Web app
-# Initializing
+### Initializing
 ```
 cd app
 npm i
 ```
-# Starting
+### Starting
 ```
 npm start
 ```
