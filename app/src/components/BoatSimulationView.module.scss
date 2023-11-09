@@ -1,0 +1,42 @@
+.boatTile{
+    display: block;
+    width: 50%;
+    height: 50vh;
+}
+
+.boatCanvas{
+    width: 100%;
+    height: 95%;
+
+    border-style: solid;
+    border-radius: 2%;
+    border-color: #000000;
+    border-width: 3px;
+}
+
+.boatInput{
+    appearance: none;
+
+    width: 100%;
+    height: 3%;
+    background-color: #797979;
+    outline: none;
+    opacity: 0.7;
+    border-radius: 5px;
+}
+.boatInput:hover{
+    opacity: 1;
+}
+
+.boatInput::-webkit-slider-thumb{
+    appearance: none;
+
+    height: 20px;
+    width: 10px;
+    border-radius: 3px;
+    background-color: #cccccc;
+    cursor: pointer;
+}
+.boatInput::-webkit-slider-thumb:hover{
+    background-color: #ffffff;
+}
