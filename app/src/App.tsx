@@ -1,7 +1,7 @@
 import { FC, useState } from 'react'
 import styles from './App.module.scss'
 
-import BoatSimulation from './components/BoatSimulation'
+import BoatSimulation from './components/BoatSimulationView'
 
 const App: FC = () => {
 
