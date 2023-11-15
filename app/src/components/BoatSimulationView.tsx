@@ -77,7 +77,7 @@ const BoatSimulation: FC = () => {
     return (
         <div className={style.boatTile}>
             <canvas ref={canvasRef} className={style.boatCanvas}></canvas>
-            <input type='range' className={style.boatInput} min='0' max="100" step="1"></input>
+            {/* <input type='range' className={style.boatInput} min='0' max="100" step="1"></input> */}
         </div>
     )
 }
