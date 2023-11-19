@@ -1,10 +1,11 @@
 import { FC, useRef, useEffect } from 'react'
 import style from './BoatSimulationView.module.scss'
 
+interface BoatSimulationProps {
+    pos: number; // that would be more advanced object with at least 2 coordinates
+}
 
-
-
-const BoatSimulation: FC = () => {
+const BoatSimulation: FC<BoatSimulationProps> = ({ pos }) => {
 
     const canvasRef = useRef(null);
 
@@ -18,7 +19,7 @@ const BoatSimulation: FC = () => {
     const draw_boat = (ctx : CanvasRenderingContext2D) => {
         const w : number = ctx.canvas.width;
         const h : number = ctx.canvas.height;
-        ctx.translate(w / 2, h / 2);
+        ctx.translate((w / 2) + pos * 10, h / 2); // example of moving based on "pos" prop
         
         ctx.fillStyle = "#432307";
         ctx.beginPath();
@@ -71,7 +72,7 @@ const BoatSimulation: FC = () => {
             window.cancelAnimationFrame(animationFrameId)
         };
 
-    },[]);
+    },[pos]);
 
     return (
         <div className={style.boatTile}>

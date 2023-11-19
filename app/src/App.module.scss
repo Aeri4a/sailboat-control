@@ -1,24 +1,59 @@
 .appContainer {
-    display: flex;
     width: 100vw;
     height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    font-family: 'Ubuntu', sans-serif;
+    
     min-height: 100vh;
 
     flex-direction: row;
 }
 
+// LEFT SIDE
 .leftTile {
-    display: flex;
     width: 30%;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
     background-color: #272727;
 }
 
+.header {
+    width: 100%;
+    height: 60px;;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: #333333;
+    text-align: center;
+    font-size: 30px;
+    color: white;
+}
+
+// RIGHT SIDE
 .rightTile {
     display: flex;
+    flex-direction: column;
     width: 70%;
     height: 100vh;
 
     background-color: #414141;
+}
+
+.timeLineTile {
+    width: 100%;
+    flex: 0 0 60px;
+
+    background-color: #272727;
+}
+
+.animationWrapper {
+    margin: 20px;
+    flex: 1 1 auto;
 }
