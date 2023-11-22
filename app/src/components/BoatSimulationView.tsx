@@ -1,5 +1,6 @@
 import { FC, useRef, useEffect } from 'react'
 import style from './BoatSimulationView.module.scss'
+import background_img_source from '../assets/water2.png'
 
 interface BoatSimulationProps {
     set_time: (new_state: (prev: number) => number) => void;
@@ -12,6 +13,21 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
 
     const canvasRef = useRef(null);
 
+    let scale_ref = useRef(1);
+    let back_img_ref = useRef(new Image());
+
+    const load_image = (src: string, ref: React.MutableRefObject<HTMLImageElement>) =>{
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            ref.current = img;
+        }
+    }
+
+    useEffect(()=>{
+        load_image(background_img_source, back_img_ref);
+    });
+
     const fix_dpi = (canvas: HTMLCanvasElement) => {
         const style_height = +getComputedStyle(canvas).getPropertyValue("height").slice(0, -2);
         const style_width = +getComputedStyle(canvas).getPropertyValue("width").slice(0, -2);
@@ -19,11 +35,39 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         canvas.setAttribute("width",String(style_width * devicePixelRatio));
     };
 
+    const draw_background = (ctx : CanvasRenderingContext2D, frame_dt: number) => {
+        const size = back_img_ref.current.naturalHeight;
+        if (!size)
+            return; 
+        const w : number = ctx.canvas.width;
+        const h : number = ctx.canvas.height;
+
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(scale_ref.current, scale_ref.current);
+
+        const pos_x = (time+frame_dt) * 10; // test
+        const pos_y = (time+frame_dt) * 5; //
+
+        const x = (pos_x) % size - size;
+        const y = (pos_y) % size - size;
+
+        const by = (Math.floor(0.5*h/(size*scale_ref.current))+1)*size;
+        const bx = (Math.floor(0.5*w/(size*scale_ref.current))+1)*size;
+
+        for(let iy = -by; iy < by + size; iy+=size){
+            for(let ix = -bx; ix < bx + size; ix+=size){
+                ctx.drawImage(back_img_ref.current, ix+x, iy+y);
+            }
+        }
+        ctx.resetTransform();
+    };
+
     
     const draw_boat = (ctx : CanvasRenderingContext2D, frame_dt: number) => {
         const w : number = ctx.canvas.width;
         const h : number = ctx.canvas.height;
         ctx.translate(w / 2, h / 2);
+        ctx.scale(scale_ref.current, scale_ref.current);
 
         const time_of_rot = 5000; //ms
         const ct = (time+frame_dt)*frame_len;
@@ -47,28 +91,24 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, 0.008 * h,0,2 * Math.PI);
         ctx.fill();
+        ctx.resetTransform();
     };
     
-    const draw_frame = (ctx : CanvasRenderingContext2D, scale : number, frame_dt: number) => { // frame_dt will be used for interpolation
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height)
-        ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2)
-        ctx.scale(scale, scale)
-        ctx.translate(-ctx.canvas.width / 2, -ctx.canvas.height / 2)
+    const draw_frame = (ctx : CanvasRenderingContext2D, frame_dt: number) => { // frame_dt will be used for interpolation
+        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+        draw_background(ctx, frame_dt);
         draw_boat(ctx, frame_dt);
     };
     
-    
-
     useEffect(() => {
-        let scale: number = 1
         let animationFrameId: number
         const canvas: HTMLCanvasElement = canvasRef!.current!;
         const ctx: CanvasRenderingContext2D = canvas!.getContext('2d')!;
         let last_frame_stamp: number = 0;
 
         canvas.onwheel = (event: WheelEvent) => {
-            scale += -event.deltaY * 0.001
-            scale = Math.max(0.125, Math.min(scale, 4))
+            scale_ref.current += -event.deltaY * 0.001
+            scale_ref.current = Math.max(0.125, Math.min(scale_ref.current, 4))
         }
         
         const render = (currentTime: number) => {
@@ -81,7 +121,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
                 time_diff = frame_len;
             }
             fix_dpi(canvas);
-            draw_frame(ctx, scale, time_diff / frame_len);
+            draw_frame(ctx, time_diff / frame_len);
             animationFrameId = window.requestAnimationFrame(render);
         };
         animationFrameId = window.requestAnimationFrame(render);
