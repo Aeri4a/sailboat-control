@@ -66,31 +66,80 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     const draw_boat = (ctx : CanvasRenderingContext2D, frame_dt: number) => {
         const w : number = ctx.canvas.width;
         const h : number = ctx.canvas.height;
+        const ct = (time+frame_dt)*frame_len;
+
+        // set these values for testing
+        const m_to_ctx_h = 0.03 * h;
+        const L = 10 * m_to_ctx_h;
+        const Hs = 5 * m_to_ctx_h;
+        const W = 3 * m_to_ctx_h;
+
+        const yaw = -2*Math.PI*(ct % 5000) / 5000;
+        const roll = Math.PI / 12;
+        const rel_sail_yaw = Math.PI / 4;
+        const rel_rudder_yaw = 0;
+
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
         ctx.translate(w / 2, h / 2);
         ctx.scale(scale_ref.current, scale_ref.current);
 
-        const time_of_rot = 5000; //ms
-        const ct = (time+frame_dt)*frame_len;
-        const da = -2*Math.PI*(ct % time_of_rot) / time_of_rot;
-        ctx.rotate(da);
-        ctx.translate(0.2 * h, 0);
+        ctx.rotate(yaw);
         
-        ctx.fillStyle = "#432307";
+        //hull
+        ctx.fillStyle = "#AE6C3F";
+        ctx.strokeStyle = "#666666";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(-0.05 * h, 0.1 * h);
-        ctx.lineTo(0.05 * h, 0.1 * h);
-        ctx.lineTo(0.05 * h, -0.1 * h);
-        ctx.lineTo(0,-0.2 * h);
-        ctx.lineTo(-0.05 * h, -0.1 * h);
-        ctx.lineTo(-0.05 * h, 0.1 * h);
+        ctx.moveTo(-0.5*W,0);
+        ctx.bezierCurveTo(-0.5*W,0,-0.5*W,0.5*L,-0.3*W,0.5*L);
+        ctx.lineTo(0.3*W,0.5*L);
+        ctx.bezierCurveTo(0.5*W,0.5*L,0.5*W,0,0.5*W,0);
+        ctx.bezierCurveTo(0.5*W,0,0.1*W,-0.5*L,0,-0.5*L);
+        ctx.bezierCurveTo(-0.1*W,-0.5*L,-0.5*W,0,-0.5*W,0);
         ctx.closePath();
         ctx.fill();
+        ctx.stroke();
+
+        //rudder steer
+        ctx.translate(0,0.35*L);
+        ctx.rotate(rel_rudder_yaw);
+
+        ctx.strokeStyle = "#452100";
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(0,0.1*L);
+        ctx.stroke();
+
+        ctx.rotate(-rel_rudder_yaw);
+        ctx.translate(0,-0.35*L);
+
+        //sail
+        ctx.translate(0,-0.25*L);
+
+        const so = Hs * Math.sin(roll);
         
-        ctx.fillStyle = "#000000";
+        ctx.fillStyle = "#ffffff";
+        
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, 0.008 * h,0,2 * Math.PI);
+        ctx.lineTo(so,0);
+        ctx.rotate(rel_sail_yaw);
+        ctx.lineTo(0,0.66*Hs);
+        ctx.lineTo(0,0);
         ctx.fill();
+        
+        ctx.strokeStyle = "#5F2E00";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0,0.66*Hs);
+        ctx.lineTo(0,0);
+        ctx.rotate(-rel_sail_yaw);
+        ctx.lineTo(so,0);
+        ctx.stroke();
+
+
         ctx.resetTransform();
     };
     
