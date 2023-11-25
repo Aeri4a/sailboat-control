@@ -73,74 +73,134 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         const L = 10 * m_to_ctx_h;
         const Hs = 5 * m_to_ctx_h;
         const W = 3 * m_to_ctx_h;
+        const H = 0.1*L;
 
-        const yaw = -2*Math.PI*(ct % 5000) / 5000;
-        const roll = Math.PI / 12;
-        const rel_sail_yaw = Math.PI / 4;
+        // const yaw = -360*(ct % 5000) / 5000;
+        const yaw = 0;
+        const roll = -30*Math.sin(ct / 500);
+        const rel_sail_yaw = 45;
         const rel_rudder_yaw = 0;
 
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
-        ctx.translate(w / 2, h / 2);
-        ctx.scale(scale_ref.current, scale_ref.current);
+        const tr3d = DOMMatrix.fromMatrix(ctx.getTransform());
+        const trPoint = (x : number, y : number, z : number) => {
+            return tr3d.transformPoint(new DOMPoint(x,y,z));
+        }
+        // point naming convention:
+        // small char for boat part: h-hull s-sail r-rudder steer
+        // x-axis reference: L-left 0-middle R-right
+        // y-axis reference: T-top 0-middle B-bottom
+        // special eg. b-beizer curve control point, 0-z of the point is 0
+        // eg. hRBb0 means bottom-right beizer curve control point at z=0 used in drawing hull
 
-        ctx.rotate(yaw);
+        tr3d.translateSelf(0.5 * w, 0.5*h, 0);
+        tr3d.scale3dSelf(scale_ref.current);
+
+        tr3d.rotateSelf(0,roll,yaw);
         
         //hull
         ctx.fillStyle = "#AE6C3F";
         ctx.strokeStyle = "#666666";
         ctx.lineWidth = 2;
+        const hL0 = trPoint(-0.5*W,0,H);
+        const hLBb = trPoint(-0.5*W,0.5*L,H);
+        const hLB = trPoint(-0.3*W,0.5*L,H);
+        const hRB = trPoint(0.3*W,0.5*L,H);
+        const hRBb = trPoint(0.5*W,0.5*L,H);
+        const hR0 = trPoint(0.5*W,0,H);
+        const hRTb = trPoint(0.1*W,-0.5*L,H);
+        const h0T = trPoint(0,-0.5*L,H);
+        const hLTb = trPoint(-0.1*W,-0.5*L,H);
+        
         ctx.beginPath();
-        ctx.moveTo(-0.5*W,0);
-        ctx.bezierCurveTo(-0.5*W,0,-0.5*W,0.5*L,-0.3*W,0.5*L);
-        ctx.lineTo(0.3*W,0.5*L);
-        ctx.bezierCurveTo(0.5*W,0.5*L,0.5*W,0,0.5*W,0);
-        ctx.bezierCurveTo(0.5*W,0,0.1*W,-0.5*L,0,-0.5*L);
-        ctx.bezierCurveTo(-0.1*W,-0.5*L,-0.5*W,0,-0.5*W,0);
+        ctx.moveTo(hL0.x,hL0.y);
+        ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
+        ctx.lineTo(hRB.x,hRB.y);
+        ctx.bezierCurveTo(hRBb.x,hRBb.y,hR0.x,hR0.y,hR0.x,hR0.y);
+        ctx.bezierCurveTo(hR0.x,hR0.y,hRTb.x,hRTb.y,h0T.x,h0T.y);
+        ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
+
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        //rudder steer
-        ctx.translate(0,0.35*L);
-        ctx.rotate(rel_rudder_yaw);
-
-        ctx.strokeStyle = "#452100";
+        ctx.fillStyle = "#D8D8D8";
+        const h0T0 = trPoint(0,-0.5*L,0);
         ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.lineTo(0,0.1*L);
+        ctx.moveTo(h0T.x,h0T.y);
+        if(roll < 0){
+            ctx.bezierCurveTo(hRTb.x,hRTb.y,hR0.x,hR0.y,hR0.x,hR0.y);
+            ctx.bezierCurveTo(hR0.x,hR0.y,hRBb.x,hRBb.y,hRB.x,hRB.y);
+            const hRB0 = trPoint(0.3*W,0.5*L,0);
+            const hRBb0 = trPoint(0.5*W,0.5*L,0);
+            const hR00 = trPoint(0.5*W,0,0);
+            const hRTb0 = trPoint(0.1*W,-0.5*L,0);
+            ctx.lineTo(hRB0.x,hRB0.y);
+            ctx.bezierCurveTo(hRBb0.x,hRBb0.y,hR00.x,hR00.y,hR00.x,hR00.y);
+            ctx.bezierCurveTo(hR00.x,hR00.y,hRTb0.x,hRTb0.y,h0T0.x,h0T0.y); 
+        }
+        else{
+            ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
+            ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
+            const hL00 = trPoint(-0.5*W,0,0);
+            const hLBb0 = trPoint(-0.5*W,0.5*L,0);
+            const hLB0 = trPoint(-0.3*W,0.5*L,0);
+            const hLTb0 = trPoint(-0.1*W,-0.5*L,0);
+            ctx.lineTo(hLB0.x,hLB0.y);
+            ctx.bezierCurveTo(hLBb0.x,hLBb0.y,hL00.x,hL00.y,hL00.x,hL00.y);
+            ctx.bezierCurveTo(hL00.x,hL00.y,hLTb0.x,hLTb0.y,h0T0.x,h0T0.y);
+        }
+        ctx.lineTo(h0T.x,h0T.y);
+        ctx.closePath();
+        ctx.fill();
+
+        //rudder steer
+        tr3d.translateSelf(0,0.35*L);
+        tr3d.rotateSelf(0,0,rel_rudder_yaw);
+        
+        ctx.strokeStyle = "#452100";
+        const r00 = trPoint(0,0,H);
+        const r0B = trPoint(0,0.1*L,H);
+        ctx.beginPath();
+        ctx.moveTo(r00.x,r00.y);
+        ctx.lineTo(r0B.x,r0B.y);
         ctx.stroke();
 
-        ctx.rotate(-rel_rudder_yaw);
-        ctx.translate(0,-0.35*L);
+        tr3d.rotateSelf(0,0,-rel_rudder_yaw);
+        tr3d.translateSelf(0,-0.35*L);
+        
+
 
         //sail
-        ctx.translate(0,-0.25*L);
-
-        const so = Hs * Math.sin(roll);
+        tr3d.translateSelf(0,-0.22*L,0);
+        tr3d.rotateSelf(0,0,rel_sail_yaw);
         
         ctx.fillStyle = "#ffffff";
-        
+        const s00M = trPoint(0,0,H+0.1*Hs);
+        const s00T = trPoint(0,0,H+1.1*Hs);
+        const s00B = trPoint(0,0,H);
+        const s0BM = trPoint(0,0.66*Hs,H+0.1*Hs);
+
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(so,0);
-        ctx.rotate(rel_sail_yaw);
-        ctx.lineTo(0,0.66*Hs);
-        ctx.lineTo(0,0);
+        ctx.moveTo(s00M.x,s00M.y);
+        ctx.lineTo(s00T.x,s00T.y);
+        ctx.lineTo(s0BM.x,s0BM.y);
+        ctx.lineTo(s00M.x,s00M.y);
         ctx.fill();
-        
+
         ctx.strokeStyle = "#5F2E00";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0,0.66*Hs);
-        ctx.lineTo(0,0);
-        ctx.rotate(-rel_sail_yaw);
-        ctx.lineTo(so,0);
+        ctx.moveTo(s0BM.x,s0BM.y);
+        ctx.lineTo(s00M.x,s00M.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(s00B.x,s00B.y);
+        ctx.lineTo(s00T.x,s00T.y);
         ctx.stroke();
 
-
-        ctx.resetTransform();
     };
     
     const draw_frame = (ctx : CanvasRenderingContext2D, frame_dt: number) => { // frame_dt will be used for interpolation
