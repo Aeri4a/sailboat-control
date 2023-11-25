@@ -1,6 +1,6 @@
 import { FC, useRef, useEffect } from 'react'
 import style from './BoatSimulationView.module.scss'
-import background_img_source from '../assets/water2.png'
+import background_img_source from '../../assets/water2.png'
 
 interface BoatSimulationProps {
     set_time: (new_state: (prev: number) => number) => void;
