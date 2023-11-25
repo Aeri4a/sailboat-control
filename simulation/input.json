@@ -1,0 +1,14 @@
+{
+    "length":9.0,
+    "width_to_length":0.23,
+    "hull_height_to_length":0.05,
+    "sail_area_to_length_squared":0.43,
+    "keel_to_sail_area":0.03,
+    "rudder_to_sail_area":0.007,
+    "ballast_to_upper_hull_mass":1.0,
+    "wind_speed_mean":10.0,
+    "wind_speed_sd":2.0,
+    "wind_direction_sd":12.5,
+    "target_x":700.0,
+    "target_y":700.0
+}
