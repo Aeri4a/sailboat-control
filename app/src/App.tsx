@@ -68,7 +68,7 @@ const App: FC = () => {
             {boatVarList.map(variable => (
               <VariableBox
                 name={variable.shortName}
-                value={boatData[variable.shortName]}
+                value={boatData[variable.shortName as keyof BoatData]}
                 onValueChange={handleBoatDataChange}
                 maxValue={variable.max}
                 minValue={variable.min}
@@ -83,7 +83,7 @@ const App: FC = () => {
             {windVarList.map(variable => (
               <VariableBox
                 name={variable.shortName}
-                value={windData[variable.shortName]}
+                value={windData[variable.shortName as keyof WindData]}
                 onValueChange={handleWindDataChange}
                 maxValue={variable.max}
                 minValue={variable.min}

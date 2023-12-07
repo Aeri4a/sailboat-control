@@ -11,7 +11,8 @@ interface BoatSimulationProps {
 
 const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, anim_running }) => {
 
-    const canvasRef = useRef(null);
+    const mainCanvasRef = useRef(null);
+    const mainCanvasParentRef = useRef(null);
 
     let scale_ref = useRef(1);
     let back_img_ref = useRef(new Image());
@@ -28,11 +29,11 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         load_image(background_img_source, back_img_ref);
     });
 
-    const fix_dpi = (canvas: HTMLCanvasElement) => {
-        const style_height = +getComputedStyle(canvas).getPropertyValue("height").slice(0, -2);
-        const style_width = +getComputedStyle(canvas).getPropertyValue("width").slice(0, -2);
-        canvas.setAttribute("height",String(style_height * devicePixelRatio));
-        canvas.setAttribute("width",String(style_width * devicePixelRatio));
+    const fix_dpi = (canvas: HTMLCanvasElement, parent : HTMLDivElement) => {
+        const style_height = +getComputedStyle(parent).getPropertyValue("height").slice(0, -2);
+        const style_width = +getComputedStyle(parent).getPropertyValue("width").slice(0, -2);
+        canvas.width = style_width * devicePixelRatio;
+        canvas.height = style_height * devicePixelRatio;
     };
 
     const draw_background = (ctx : CanvasRenderingContext2D, frame_dt: number) => {
@@ -101,9 +102,6 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         tr3d.rotateSelf(0,roll,yaw);
         
         //hull
-        ctx.fillStyle = "#AE6C3F";
-        ctx.strokeStyle = "#666666";
-        ctx.lineWidth = 2;
         const hL0 = trPoint(-0.5*W,0,H);
         const hLBb = trPoint(-0.5*W,0.5*L,H);
         const hLB = trPoint(-0.3*W,0.5*L,H);
@@ -114,18 +112,6 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         const h0T = trPoint(0,-0.5*L,H);
         const hLTb = trPoint(-0.1*W,-0.5*L,H);
         
-        ctx.beginPath();
-        ctx.moveTo(hL0.x,hL0.y);
-        ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
-        ctx.lineTo(hRB.x,hRB.y);
-        ctx.bezierCurveTo(hRBb.x,hRBb.y,hR0.x,hR0.y,hR0.x,hR0.y);
-        ctx.bezierCurveTo(hR0.x,hR0.y,hRTb.x,hRTb.y,h0T.x,h0T.y);
-        ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
-
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
         ctx.fillStyle = "#D8D8D8";
         const h0T0 = trPoint(0,-0.5*L,0);
         ctx.beginPath();
@@ -155,6 +141,22 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         ctx.lineTo(h0T.x,h0T.y);
         ctx.closePath();
         ctx.fill();
+        
+        ctx.fillStyle = "#AE6C3F";
+        ctx.strokeStyle = "#666666";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(hL0.x,hL0.y);
+        ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
+        ctx.lineTo(hRB.x,hRB.y);
+        ctx.bezierCurveTo(hRBb.x,hRBb.y,hR0.x,hR0.y,hR0.x,hR0.y);
+        ctx.bezierCurveTo(hR0.x,hR0.y,hRTb.x,hRTb.y,h0T.x,h0T.y);
+        ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
+
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
 
         //rudder steer
         tr3d.translateSelf(0,0.35*L);
@@ -211,7 +213,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     
     useEffect(() => {
         let animationFrameId: number
-        const canvas: HTMLCanvasElement = canvasRef!.current!;
+        const canvas: HTMLCanvasElement = mainCanvasRef!.current!;
         const ctx: CanvasRenderingContext2D = canvas!.getContext('2d')!;
         let last_frame_stamp: number = 0;
 
@@ -229,7 +231,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
                 last_frame_stamp = currentTime;
                 time_diff = frame_len;
             }
-            fix_dpi(canvas);
+            fix_dpi(canvas, mainCanvasParentRef.current!);
             draw_frame(ctx, time_diff / frame_len);
             animationFrameId = window.requestAnimationFrame(render);
         };
@@ -243,8 +245,14 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
 
 
     return (
-        <div className={style.boatTile}>
-            <canvas ref={canvasRef} className={style.boatCanvas}></canvas>
+        <div className={style.mainTile}>
+            <div className={style.leftTile}>
+                <canvas className={`${style.leftCanvas} ${style.leftCanvasTop}`}></canvas>
+                <canvas className={`${style.leftCanvas} ${style.leftCanvasBottom}`}></canvas>
+            </div>
+            <div ref={mainCanvasParentRef} className={style.boatTile}>
+                <canvas ref={mainCanvasRef} className={style.boatCanvas}></canvas>
+            </div>
         </div>
     );
 };
