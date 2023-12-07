@@ -120,6 +120,7 @@ const App: FC = () => {
             anim_running={animRun}
             frame_len={FRAME_TIME}
             time={data.time[timeStamp]}
+            boatData={boatData}
           />
         </div>
       </div>
