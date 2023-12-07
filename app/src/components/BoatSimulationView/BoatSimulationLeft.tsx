@@ -14,6 +14,13 @@ interface boatParams {
     R: number;
 }
 
+const waterColor = "#0052B5";
+const sideColor = "#D8D8D8";
+const sailColor = "#ffffff";
+const hullBorderColor = "#666666";
+const mastColor = "#5F2E00";
+const keelRudderColor = "#5F5F5F";
+
 const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = (ctx, bp) => {
     const w : number = ctx.canvas.width;
     const h : number = ctx.canvas.height;
@@ -22,11 +29,11 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
     ctx.translate(w * 0.5, h * 0.75);
 
     // background
-    ctx.fillStyle = "#0052B5";
+    ctx.fillStyle = waterColor;
     ctx.fillRect(-0.5*w,0,w,0.25 * h);
     
     // hull
-    ctx.fillStyle = "#D8D8D8";
+    ctx.fillStyle = sideColor;
     ctx.beginPath();
     ctx.moveTo(-0.5*bp.L,-bp.H);
     ctx.lineTo(0.5*bp.L,-bp.H);
@@ -36,14 +43,14 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = "#666666";
+    ctx.strokeStyle = hullBorderColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(-0.5*bp.L,-bp.H);
     ctx.lineTo(0.5*bp.L,-bp.H);
     ctx.stroke();
 
-    ctx.fillStyle = "#5F5F5F";
+    ctx.fillStyle = keelRudderColor;
     ctx.translate(0,bp.Dh);
     ctx.beginPath();
     ctx.moveTo(0.5*bp.L,0);
@@ -65,8 +72,8 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
 
     // sail
     ctx.translate(-0.22*bp.L,-bp.H-bp.Dh);
-    ctx.strokeStyle = "#5F2E00";
-    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = mastColor;
+    ctx.fillStyle = sailColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0,-0.1*bp.Hs);
@@ -99,11 +106,11 @@ const draw_front_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void =
     ctx.translate(w * 0.5, h * 0.75);
 
     // background
-    ctx.fillStyle = "#0052B5";
+    ctx.fillStyle = waterColor;
     ctx.fillRect(-0.5*w,0,w,0.25 * h);
 
     // hull
-    ctx.fillStyle = "#D8D8D8";
+    ctx.fillStyle = sideColor;
     ctx.beginPath();
     ctx.moveTo(-0.5*bp.W,-bp.H);
     ctx.lineTo(0.5*bp.W,-bp.H);
@@ -114,7 +121,7 @@ const draw_front_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void =
     ctx.fill();
 
     // sail
-    ctx.strokeStyle = "#5F2E00";
+    ctx.strokeStyle = mastColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0,-bp.H);
@@ -123,14 +130,14 @@ const draw_front_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void =
 
 
     // hull front
-    ctx.strokeStyle = "#666666";
+    ctx.strokeStyle = hullBorderColor;
     ctx.beginPath();
     ctx.moveTo(-0.5*bp.W,-bp.H);
     ctx.lineTo(0.5*bp.W,-bp.H);
     ctx.stroke();
 
     // keel
-    ctx.fillStyle = "#5F5F5F";
+    ctx.fillStyle = keelRudderColor;
     ctx.fillRect(-0.5*Ww, bp.Dh, Ww, bp.Dk);
 
     ctx.beginPath();

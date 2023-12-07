@@ -10,6 +10,13 @@ interface boatSimulationMainParams {
     background_image: HTMLImageElement
 }
 
+const hullTopColor = "#AE6C3F";
+const hullBorderColor = "#666666";
+const sailColor = "#ffffff";
+const mastColor = "#5F2E00";
+const sideColor = "#D8D8D8";
+const rudderColor = "#452100";
+
 const draw_background: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, scale, background_image}) => {
     const size = background_image.naturalHeight;
         if (!size)
@@ -86,7 +93,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     const h0T = trPoint(0,-0.5*L,H);
     const hLTb = trPoint(-0.1*W,-0.5*L,H);
     
-    ctx.fillStyle = "#D8D8D8";
+    ctx.fillStyle = sideColor;
     const h0T0 = trPoint(0,-0.5*L,0);
     ctx.beginPath();
     ctx.moveTo(h0T.x,h0T.y);
@@ -116,8 +123,8 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     ctx.closePath();
     ctx.fill();
     
-    ctx.fillStyle = "#AE6C3F";
-    ctx.strokeStyle = "#666666";
+    ctx.fillStyle = hullTopColor;
+    ctx.strokeStyle = hullBorderColor;
     ctx.lineWidth = 2;
 
     ctx.beginPath();
@@ -136,7 +143,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     tr3d.translateSelf(0,0.35*L);
     tr3d.rotateSelf(0,0,rel_rudder_yaw);
     
-    ctx.strokeStyle = "#452100";
+    ctx.strokeStyle = rudderColor;
     const r00 = trPoint(0,0,H);
     const r0B = trPoint(0,0.1*L,H);
     ctx.beginPath();
@@ -153,7 +160,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     tr3d.translateSelf(0,-0.22*L,0);
     tr3d.rotateSelf(0,0,rel_sail_yaw);
     
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = sailColor;
     const s00M = trPoint(0,0,H+0.1*Hs);
     const s00T = trPoint(0,0,H+1.1*Hs);
     const s00B = trPoint(0,0,H);
@@ -166,7 +173,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     ctx.lineTo(s00M.x,s00M.y);
     ctx.fill();
 
-    ctx.strokeStyle = "#5F2E00";
+    ctx.strokeStyle = mastColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(s0BM.x,s0BM.y);
