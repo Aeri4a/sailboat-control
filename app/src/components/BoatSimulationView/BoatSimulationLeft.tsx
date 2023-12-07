@@ -1,4 +1,4 @@
-import { BoatData } from '../../types/commonTypes'
+import { BoatData } from '../../types/commonTypes';
 
 interface boatParams {
     L: number;
@@ -11,6 +11,7 @@ interface boatParams {
     Dh: number;
     Dk: number;
     Dr: number;
+    R: number;
 }
 
 const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = (ctx, bp) => {
@@ -18,13 +19,13 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
     const h : number = ctx.canvas.height;
 
     
-    ctx.translate(w * 0.5, h * 0.66);
+    ctx.translate(w * 0.5, h * 0.75);
 
-    //background
+    // background
     ctx.fillStyle = "#0052B5";
-    ctx.fillRect(-0.5*w,0,w,0.34 * h);
+    ctx.fillRect(-0.5*w,0,w,0.25 * h);
     
-    //hull
+    // hull
     ctx.fillStyle = "#D8D8D8";
     ctx.beginPath();
     ctx.moveTo(-0.5*bp.L,-bp.H);
@@ -35,8 +36,35 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
     ctx.closePath();
     ctx.fill();
 
+    ctx.strokeStyle = "#666666";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-0.5*bp.L,-bp.H);
+    ctx.lineTo(0.5*bp.L,-bp.H);
+    ctx.stroke();
+
+    ctx.fillStyle = "#5F5F5F";
+    ctx.translate(0,bp.Dh);
+    ctx.beginPath();
+    ctx.moveTo(0.5*bp.L,0);
+    ctx.lineTo(0.5*bp.L,bp.Dr);
+    ctx.lineTo(0.5*(bp.L-bp.Dr),bp.Dr);
+    ctx.lineTo(0.5*(bp.L-bp.Dr),0);
+    ctx.lineTo(0.5*bp.L,0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(bp.Lk,0);
+    ctx.lineTo(bp.Lk + bp.Ly, bp.Dk);
+    ctx.lineTo(bp.Ly, bp.Dk);
+    ctx.lineTo(0,0);
+    ctx.closePath();
+    ctx.fill();
+
     // sail
-    ctx.translate(-0.22*bp.L,-bp.H);
+    ctx.translate(-0.22*bp.L,-bp.H-bp.Dh);
     ctx.strokeStyle = "#5F2E00";
     ctx.fillStyle = "#ffffff";
     ctx.lineWidth = 2;
@@ -61,13 +89,66 @@ const draw_side_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = 
     ctx.resetTransform();
 }
 
+const draw_front_view: (ctx: CanvasRenderingContext2D, bp: boatParams) => void = (ctx, bp) => {
+    const w : number = ctx.canvas.width;
+    const h : number = ctx.canvas.height;
+
+    const Ww = bp.W *0.033;
+    const Rr = bp.R + 0.5*Ww;
+    
+    ctx.translate(w * 0.5, h * 0.75);
+
+    // background
+    ctx.fillStyle = "#0052B5";
+    ctx.fillRect(-0.5*w,0,w,0.25 * h);
+
+    // hull
+    ctx.fillStyle = "#D8D8D8";
+    ctx.beginPath();
+    ctx.moveTo(-0.5*bp.W,-bp.H);
+    ctx.lineTo(0.5*bp.W,-bp.H);
+    ctx.bezierCurveTo(0.5*bp.W, 0, 0.2*bp.W, bp.Dh, 0.5*Ww, bp.Dh);
+    ctx.lineTo(-0.5*Ww, bp.Dh);
+    ctx.bezierCurveTo(-0.2*bp.W, bp.Dh, -0.5*bp.W, 0, -0.5*bp.W,-bp.H);
+    ctx.closePath();
+    ctx.fill();
+
+    // sail
+    ctx.strokeStyle = "#5F2E00";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0,-bp.H);
+    ctx.lineTo(0, -1.1*bp.Hs);
+    ctx.stroke();
+
+
+    // hull front
+    ctx.strokeStyle = "#666666";
+    ctx.beginPath();
+    ctx.moveTo(-0.5*bp.W,-bp.H);
+    ctx.lineTo(0.5*bp.W,-bp.H);
+    ctx.stroke();
+
+    // keel
+    ctx.fillStyle = "#5F5F5F";
+    ctx.fillRect(-0.5*Ww, bp.Dh, Ww, bp.Dk);
+
+    ctx.beginPath();
+    ctx.arc(0, bp.Dk + bp.Dh + Rr, Rr, 0, 2*Math.PI);
+    ctx.fill();
+
+    ctx.resetTransform();
+}
+
+
 const boatSimulationLeft: (ctxSide: CanvasRenderingContext2D, ctxFront: CanvasRenderingContext2D, boatData: BoatData) => void = (ctxSide, ctxFront, boatData) => {
     const w : number = ctxSide.canvas.width;
-    const m_to_ctx_w = 0.07 * w;
+    const h : number = ctxSide.canvas.height;
+    const m_to_ctx = Math.min(0.07 * w, 0.045*h);
     const pW = 1000;
     const pB = 50;
     
-    const L = boatData.length * m_to_ctx_w;
+    const L = boatData.length * m_to_ctx;
     const W = boatData.wtlr * L;
     const H = boatData.hhtlr * L;
     const As = boatData.satlsr * L * L;
@@ -78,15 +159,17 @@ const boatSimulationLeft: (ctxSide: CanvasRenderingContext2D, ctxFront: CanvasRe
     const Ar = boatData.ratsar * As;
     const Dr = 2 * Math.sqrt(Ar / 2);
     const Dh = (H*pB*(1 + boatData.bmtuhm)) / (pW - pB*boatData.bmtuhm);
+    const R = Math.sqrt(boatData.bmtuhm * (L*W*(H+Dh)*pB) / (Math.PI*11000*Lk));
     
     
     const Lx = 1.5*(H+Dh);
     const Ly = Lk * 0.5;
     
-    const bp: boatParams = {L,W,Lk,Lx,Ly,H,Hs,Dh,Dk,Dr};
+    const bp: boatParams = {L,W,Lk,Lx,Ly,H,Hs,Dh,Dk,Dr, R};
     ctxSide.clearRect(0,0,ctxSide.canvas.width,ctxSide.canvas.height);
     ctxFront.clearRect(0,0,ctxFront.canvas.width,ctxFront.canvas.height);
     draw_side_view(ctxSide, bp);
+    draw_front_view(ctxFront, bp);
 }
 
 export default boatSimulationLeft

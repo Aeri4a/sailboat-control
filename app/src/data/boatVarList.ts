@@ -35,7 +35,7 @@ const boatVarList: VariableObject[] = [
         step: 0.05
     },
     {
-        name: "Keep area to sail area ratio",
+        name: "Keel area to sail area ratio",
         shortName: "katsar",
         unit: "",
         max: 0.1,
