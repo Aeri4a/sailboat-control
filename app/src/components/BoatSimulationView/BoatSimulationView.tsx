@@ -11,9 +11,12 @@ interface BoatSimulationProps {
 
 const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, anim_running }) => {
 
+    const mainContainerRef = useRef(null);
     const mainCanvasRef = useRef(null);
-    const mainCanvasParentRef = useRef(null);
+    const leftTopCanvasRef = useRef(null);
+    const leftBottomCanvasRef = useRef(null);
 
+    let fix_dpi_required = useRef(false);
     let scale_ref = useRef(1);
     let back_img_ref = useRef(new Image());
 
@@ -29,9 +32,10 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         load_image(background_img_source, back_img_ref);
     });
 
-    const fix_dpi = (canvas: HTMLCanvasElement, parent : HTMLDivElement) => {
-        const style_height = +getComputedStyle(parent).getPropertyValue("height").slice(0, -2);
-        const style_width = +getComputedStyle(parent).getPropertyValue("width").slice(0, -2);
+    const fix_dpi = (canvas: HTMLCanvasElement) => {
+        const parent_style = getComputedStyle(canvas.parentElement!);
+        const style_height = +parent_style.getPropertyValue("height").slice(0, -2);
+        const style_width = +parent_style.getPropertyValue("width").slice(0, -2);
         canvas.width = style_width * devicePixelRatio;
         canvas.height = style_height * devicePixelRatio;
     };
@@ -212,7 +216,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     };
     
     useEffect(() => {
-        let animationFrameId: number
+        let animationFrameId: number;
         const canvas: HTMLCanvasElement = mainCanvasRef!.current!;
         const ctx: CanvasRenderingContext2D = canvas!.getContext('2d')!;
         let last_frame_stamp: number = 0;
@@ -231,7 +235,13 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
                 last_frame_stamp = currentTime;
                 time_diff = frame_len;
             }
-            fix_dpi(canvas, mainCanvasParentRef.current!);
+            if(fix_dpi_required.current){
+                fix_dpi(canvas);
+                fix_dpi(leftTopCanvasRef.current!);
+                fix_dpi(leftBottomCanvasRef.current!);
+                fix_dpi_required.current = false;
+            }
+
             draw_frame(ctx, time_diff / frame_len);
             animationFrameId = window.requestAnimationFrame(render);
         };
@@ -243,14 +253,29 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
 
     },[time,anim_running]);
 
+    useEffect(() => {
+        const observer = new ResizeObserver(() => {
+            fix_dpi_required.current = true;
+        });
+        observer.observe(mainContainerRef.current!);
+
+        return () => {
+            observer.disconnect();
+        }
+    },[]);
+
 
     return (
-        <div className={style.mainTile}>
+        <div ref={mainContainerRef} className={style.mainTile}>
             <div className={style.leftTile}>
-                <canvas className={`${style.leftCanvas} ${style.leftCanvasTop}`}></canvas>
-                <canvas className={`${style.leftCanvas} ${style.leftCanvasBottom}`}></canvas>
+                <div className={`${style.leftCanvasTile} ${style.leftCanvasTopTile}`}>
+                    <canvas ref={leftTopCanvasRef} className={style.boatCanvas}></canvas>
+                </div>
+                <div className={`${style.leftCanvasTile} ${style.leftCanvasBottomTile}`}>
+                    <canvas ref={leftBottomCanvasRef} className={style.boatCanvas}></canvas>
+                </div>
             </div>
-            <div ref={mainCanvasParentRef} className={style.boatTile}>
+            <div className={style.boatTile}>
                 <canvas ref={mainCanvasRef} className={style.boatCanvas}></canvas>
             </div>
         </div>

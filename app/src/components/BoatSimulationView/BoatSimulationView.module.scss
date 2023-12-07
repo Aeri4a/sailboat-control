@@ -13,20 +13,19 @@
     flex-direction: column;
 }
 
-.leftCanvas{
+.leftCanvasTile{
     flex: 1 1 auto;
     min-width: 0;
     min-height: 0;
     border: 0;
     border-radius: 20px;
-    background-color: burlywood;
 }
 
-.leftCanvasTop{
+.leftCanvasTopTile{
     margin: 0 4px 2px 0;
 }
 
-.leftCanvasBottom{
+.leftCanvasBottomTile{
     margin: 2px 4px 0 0;
 }
 
