@@ -107,7 +107,7 @@ const App: FC = () => {
               />
               <Slider
                 value={timeStamp}
-                onValueChange={() => {}}
+                onValueChange={(event) => {setTimeStamp(+event.target.value);}}
                 minValue={0}
                 maxValue={36000}
                 step={1}
