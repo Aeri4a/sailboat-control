@@ -40,8 +40,10 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         const parent_style = getComputedStyle(canvas.parentElement!);
         const style_height = +parent_style.getPropertyValue("height").slice(0, -2);
         const style_width = +parent_style.getPropertyValue("width").slice(0, -2);
-        canvas.width = style_width * devicePixelRatio;
-        canvas.height = style_height * devicePixelRatio;
+        // canvas.width = style_width * devicePixelRatio;
+        // canvas.height = style_height * devicePixelRatio;
+        canvas.width = style_width;
+        canvas.height = style_height;
     };
     
     const draw_frame = (frame_dt: number) => { // frame_dt will be used for interpolation

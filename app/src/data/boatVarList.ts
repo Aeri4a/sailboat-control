@@ -55,7 +55,8 @@ const boatVarList: VariableObject[] = [
         shortName: "bmtuhm",
         unit: "",
         max: 1.0,
-        min: 0.6,
+        // min: 0.6,
+        min: 0.0,
         step: 0.01
     }
 ];
