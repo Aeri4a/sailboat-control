@@ -9,11 +9,11 @@ from vector_math import *
 
 DT = 0.1
 
-input_file = open("input_1.json")
+input_file = open("input.json")
 input_data = json.load(input_file)
 input_file.close()
 
-
+print("Script started")
 boat = Boat(input_data)
 
 # Wind variables
@@ -129,4 +129,5 @@ output_file = open("output.json","w")
 output_file.write(output_data)
 output_file.close()
 
-plt.show()
+print("Script ended")
+# plt.show()
