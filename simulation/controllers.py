@@ -98,3 +98,25 @@ class PositionPID:
 
         return max(min((target_position-position)*self.dt,math.pi/12),-math.pi/12)
     
+
+# class SailController:
+#     sail_target = 0
+#     speed_mean = 0
+#     C = 0.1
+#     dt = 0.1
+#     weight = 0
+#     saturation_time = 100
+#     update_time = 100
+#     def __init__(self, C, saturation_time, update_time, init_sail, dt):
+#         self.C = C
+#         self.dt = dt
+#         self.saturation_time = saturation_time
+#         self.update_time = update_time
+#         self.sail_target = init_sail
+#     def control(self, speed_now, sail_now):
+#         self.weight += (self.saturation_time*self.update_time-self.weight*self.saturation_time)*self.dt
+#         self.speed_mean = (1-self.weight)*speed_now+self.weight*self.speed_mean
+#         if speed_now > self.speed_mean:
+#             self.sail_target += self.C * (sail_now - self.sail_target) * self.dt
+#         self.sail_target = max(min(self.sail_target,5*math.pi/12),-5*math.pi/12)
+#         return max(min((self.sail_target-sail_now)*self.dt,math.pi/12),-math.pi/12)

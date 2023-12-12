@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from vector_math import *
 from controllers import *
 
+import json
+
+
 # Constants
 WATER_DENSITY = 1000
 AIR_DENSITY = 1.2
@@ -194,120 +197,3 @@ class Boat:
         if self.roll > math.pi/2 or self.roll < -math.pi/2:
             return True
         return False
-    
-    # def tester(self):
-    #     x = [i for i in range(360)]
-    #     magnitude = []
-    #     direction = []
-    #     for i in range(360):
-    #         # wind = np.matmul(np.array([5.0,0]), rotation_matrix(i/360*2*math.pi))
-    #         wind = np.array([0.0,0.0])
-    #         self.velocity = np.matmul(np.array([1.0,0]), rotation_matrix(i/360*2*math.pi))
-    #         # self.velocity = np.array([0, -0.03*i])
-
-    #         force = self.get_rudder_drag()
-    #         magnitude.append(np.linalg.norm(force))
-    #         direction.append(np.arctan2(force[1],force[0]))
-    #     plt.plot(x,magnitude)
-    #     # plt.plot(x,direction)
-    #     plt.show()
-
-    def tester(self):
-        x = []
-        y = []
-        z = []
-        t = []
-        roll = []
-        torque = []
-        yaw_torque = []
-        roll_sail_drag = []
-        roll_keel_drag = []
-        roll_rudder_drag = []
-        ballast = []
-        yaw = []
-        yaw_rudder_drag = []
-        yaw_keel_drag = []
-        yaw_hull_drag = []
-        # z = [(0.001*i,0,1-0.001*i) for i in range(1000)]
-        rudder_position = []
-        speed = []
-        tmax = 0
-
-        # rudder_pid = PID(0.01,0,10,DT)
-        # 3 0.001 0 works
-        rudder_pid = PositionPID(3,0.001,0,DT)
-        # targets = [np.array([500,-500]),np.array([1000,0]),np.array([500,500]),np.array([0,0])]
-
-        wind = np.array([-5.0,0])
-        for i in range(10000):
-            # print(i)
-            if self.update_physics(wind):
-                break
-            tmax += 1
-
-
-
-            # self.rudder_position += rudder_pid.control(-math.pi/2,self.yaw,self.rudder_position)
-            self.rudder_position += rudder_pid.control(-math.pi/2,arg(self.velocity),self.rudder_position)
-            self.rudder_position = max(-math.pi/4,self.rudder_position)
-            self.rudder_position = min(math.pi/4,self.rudder_position)
-
-
-
-            t.append(i)
-            x.append(self.position[1])
-            y.append(self.position[0])
-            roll.append(self.roll)
-            torque.append(self.get_roll_acceleration(self.get_lift_force(wind),self.get_sail_drag(wind),self.get_keel_drag(),self.get_rudder_drag())*self.roll_inertia)
-            yaw_torque.append(self.get_yaw_acceleration(self.get_rudder_drag()))#*self.yaw_inertia
-            rudder_position.append(self.rudder_position)
-
-            roll_sail_drag.append(np.matmul((self.sail_height+3*self.boom_height+3*self.height)/3*(self.get_lift_force(wind)+self.get_sail_drag(wind)),rotation_matrix(-self.yaw))[1])
-            roll_keel_drag.append(np.matmul(-((2*self.hull_depth+self.keel_depth)*self.get_keel_drag())/2,rotation_matrix(-self.yaw))[1])
-            roll_rudder_drag.append(np.matmul(-((2*self.hull_depth+self.rudder_depth)*self.get_rudder_drag())/2,rotation_matrix(-self.yaw))[1])
-            ballast.append(-self.ballast_mass*GRAVITY*(self.hull_depth+self.keel_depth)*math.sin(self.roll))
-            speed.append(np.linalg.norm(self.velocity))
-
-            yaw.append(self.yaw)
-            yaw_rudder_drag.append(np.matmul(self.get_rudder_drag(),rotation_matrix(-self.yaw))[1] * self.length / 2)
-            yaw_keel_drag.append(-self.yaw_speed ** 2 * self.keel_length * self.keel_area * math.cos(self.roll) * WATER_DENSITY / 4)
-            yaw_hull_drag.append(-self.yaw_speed ** 2 * self.length**2 * self.hull_depth * WATER_DENSITY / 4)
-
-        start = 0
-        # start = tmax-100
-        z=[(i/(tmax-start),0,1-i/(tmax-start)) for i in range(tmax-start)]
-        fig, axs = plt.subplots(3,5)
-        axs[0,0].scatter(x[start:],y[start:],c=z)
-        axs[0,0].set_title("position")
-        axs[0,1].scatter(t[start:],roll[start:],c=z)
-        axs[0,1].set_title("roll")
-        axs[0,2].scatter(t[start:],torque[start:],c=z)
-        axs[0,2].set_title("total roll torque")
-        axs[0,3].scatter(t[start:],yaw_torque[start:],c=z)
-        axs[0,3].set_title("total yaw torque")
-        axs[0,4].scatter(t[start:],rudder_position[start:],c=z)
-        axs[0,4].set_title("rudder position")
-
-        axs[1,0].scatter(t[start:],roll_sail_drag[start:],c=z)
-        axs[1,0].set_title("roll: sail drag")
-        axs[1,1].scatter(t[start:],roll_keel_drag[start:],c=z)
-        axs[1,1].set_title("roll: keel drag")
-        axs[1,2].scatter(t[start:],roll_rudder_drag[start:],c=z)
-        axs[1,2].set_title("roll: rudder drag")
-        axs[1,3].scatter(t[start:],ballast[start:],c=z)
-        axs[1,3].set_title("roll: ballast")
-        axs[1,4].scatter(t[start:],speed[start:],c=z)
-        axs[1,4].set_title("speed")
-
-        axs[2,0].scatter(t[start:],yaw[start:],c=z)
-        axs[2,0].set_title("yaw")
-        axs[2,1].scatter(t[start:],yaw_rudder_drag[start:],c=z)
-        axs[2,1].set_title("yaw: rudder drag")
-        axs[2,2].scatter(t[start:],yaw_keel_drag[start:],c=z)
-        axs[2,2].set_title("yaw: keel drag")
-        axs[2,3].scatter(t[start:],yaw_hull_drag[start:],c=z)
-        axs[2,3].set_title("yaw: hull drag")
-
-        plt.show()
-
-
