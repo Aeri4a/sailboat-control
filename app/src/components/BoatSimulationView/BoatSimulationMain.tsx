@@ -1,4 +1,5 @@
-import { BoatData } from '../../types/commonTypes'
+import { BoatData, SimulationData } from '../../types/commonTypes'
+import interpolate from './BoatSimulationHelper';
 
 interface boatSimulationMainParams {
     ctx: CanvasRenderingContext2D;
@@ -7,7 +8,8 @@ interface boatSimulationMainParams {
     frame_len: number;
     scale: number;
     boatData: BoatData;
-    background_image: HTMLImageElement
+    background_image: HTMLImageElement;
+    simulationData: SimulationData | null;
 }
 
 const hullTopColor = "#AE6C3F";
@@ -17,37 +19,40 @@ const mastColor = "#5F2E00";
 const sideColor = "#D8D8D8";
 const rudderColor = "#452100";
 
-const draw_background: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, scale, background_image}) => {
-    const size = background_image.naturalHeight;
-        if (!size)
-            return; 
-        const w : number = ctx.canvas.width;
-        const h : number = ctx.canvas.height;
+const draw_background: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, scale, background_image, simulationData}) => {
+    const size = background_image.naturalWidth;
+    if (!size)
+        return;
+    const framec = background_image.naturalHeight / size;
+    const frameno = Math.floor((time + frame_dt)*2) % framec;
 
-        ctx.translate(w / 2, h / 2);
-        ctx.scale(scale, scale);
-
-        const pos_x = (time+frame_dt) * 10; // test
-        const pos_y = (time+frame_dt) * 5; //
-
-        const x = (pos_x) % size - size;
-        const y = (pos_y) % size - size;
-
-        const by = (Math.floor(0.5*h/(size*scale))+1)*size;
-        const bx = (Math.floor(0.5*w/(size*scale))+1)*size;
-
-        for(let iy = -by; iy < by + size; iy+=size){
-            for(let ix = -bx; ix < bx + size; ix+=size){
-                ctx.drawImage(background_image, ix+x, iy+y);
-            }
-        }
-        ctx.resetTransform();
-}
-
-const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, frame_len, scale, boatData}) => {
     const w : number = ctx.canvas.width;
     const h : number = ctx.canvas.height;
-    const ct = (time+frame_dt)*frame_len;
+    const m_to_ctx_h = 0.03 * h;
+
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(scale, scale);
+
+    const pos_x = -interpolate(time, frame_dt, simulationData?.positionX) * m_to_ctx_h;
+    const pos_y = -interpolate(time, frame_dt, simulationData?.positionY) * m_to_ctx_h;
+
+    const x = (pos_x) % size - size;
+    const y = (pos_y) % size - size;
+
+    const by = (Math.floor(0.5*h/(size*scale))+1)*size;
+    const bx = (Math.floor(0.5*w/(size*scale))+1)*size;
+
+    for(let iy = -by; iy < by + size; iy+=size){
+        for(let ix = -bx; ix < bx + size; ix+=size){
+            ctx.drawImage(background_image, 0, frameno * size, size, size, ix+x, iy+y, size, size);
+        }
+    }
+    ctx.resetTransform();
+}
+
+const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, frame_len, scale, boatData, simulationData}) => {
+    const w : number = ctx.canvas.width;
+    const h : number = ctx.canvas.height;
 
     // boat params
     const m_to_ctx_h = 0.03 * h;
@@ -57,11 +62,10 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     const As = boatData.satlsr * L * L;
     const Hs = 3 * Math.sqrt(As / 6);
 
-    // const yaw = -360*(ct % 5000) / 5000;
-    const yaw = 0;
-    const roll = -30*Math.sin(ct / 500);
-    const rel_sail_yaw = 45;
-    const rel_rudder_yaw = 0;
+    const roll = interpolate(time, frame_dt, simulationData?.roll) * 180 / Math.PI;
+    const yaw = interpolate(time, frame_dt, simulationData?.yaw) * 180 / Math.PI;
+    const rel_sail_yaw = interpolate(time, frame_dt, simulationData?.sailPosition) * 180 / Math.PI;
+    const rel_rudder_yaw = interpolate(time, frame_dt, simulationData?.rudderPosition) * 180 / Math.PI;
 
     ctx.lineCap = "round";
     ctx.lineJoin = "round";

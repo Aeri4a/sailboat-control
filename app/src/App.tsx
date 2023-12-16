@@ -39,6 +39,7 @@ const App: FC = () => {
     .unwrap()
     .then(()=> {
         console.log('good');
+        setAnimRun(true);
     }).catch(err => {
         console.log('bad: ', err);
     })
@@ -146,6 +147,7 @@ const App: FC = () => {
             frame_len={FRAME_TIME}
             time={data.time[timeStamp]}
             boatData={boatInputData}
+            simulationData={simulationData}
           />
         </div>
       </div>

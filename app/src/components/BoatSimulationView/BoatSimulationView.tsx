@@ -1,7 +1,7 @@
 import { FC, useRef, useEffect } from 'react'
-import { BoatData } from '../../types/commonTypes'
+import { BoatData, SimulationData } from '../../types/commonTypes'
 import style from './BoatSimulationView.module.scss'
-import background_img_source from '../../assets/water2.png'
+import background_img_source from '../../assets/background.png'
 import  boatSimulationMain  from './BoatSimulationMain'
 import boatSimulationLeft from './BoatSimulationLeft'
 
@@ -11,9 +11,10 @@ interface BoatSimulationProps {
     frame_len: number;
     time: number;
     boatData: BoatData;
+    simulationData: SimulationData | null;
 }
 
-const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, anim_running, boatData }) => {
+const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, anim_running, boatData, simulationData }) => {
 
     const mainContainerRef = useRef(null);
     const mainCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,7 +51,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         const scale = scale_ref.current
         const background_image = back_img_ref.current;
         const ctx: CanvasRenderingContext2D = mainCanvasRef.current!.getContext('2d')!;
-        boatSimulationMain({ctx, time, frame_dt, frame_len, scale, boatData, background_image});
+        boatSimulationMain({ctx, time, frame_dt, frame_len, scale, boatData, background_image, simulationData});
         boatSimulationLeft(leftTopCanvasRef.current!.getContext('2d')!, leftBottomCanvasRef.current!.getContext('2d')!, boatData);
     };
     
@@ -89,7 +90,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
             window.cancelAnimationFrame(animationFrameId)
         };
 
-    },[time,anim_running,boatData]);
+    },[time,anim_running,boatData,simulationData]);
 
     useEffect(() => {
         const observer = new ResizeObserver(() => {

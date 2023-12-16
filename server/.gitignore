@@ -36,3 +36,7 @@ lerna-debug.log*
 
 # Python cache
 /python_engine/__pycache__
+
+# Simulation data
+/python_engine/input.json
+/python_engine/output.json
