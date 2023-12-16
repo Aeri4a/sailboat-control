@@ -55,11 +55,11 @@ const App: FC = () => {
   };
 
   const handleBoatInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setBoatInputData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
+    setBoatInputData(prevState => ({ ...prevState, [event.target.name]: +event.target.value }));
   };
 
   const handleWindInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setWindInputData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
+    setWindInputData(prevState => ({ ...prevState, [event.target.name]: +event.target.value }));
   };
 
   useEffect(() => {
