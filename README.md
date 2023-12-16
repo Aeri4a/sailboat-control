@@ -24,7 +24,7 @@ npm start
 ## Technologies
 - Python
 - React (TypeScript)
-- NodeJS (TypeScript)
+- NestJS (TypeScript)
 
 ## Project created by:
 - Ignacy Kuźniewski

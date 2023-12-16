@@ -1,5 +1,5 @@
-import fs from 'fs';
-import { promisify } from 'util';
+import { InternalServerErrorException } from '@nestjs/common';
+import { promises as fsp } from 'fs';
 
 /**
  * Check if a file exists at a given path.
@@ -8,8 +8,8 @@ import { promisify } from 'util';
  *
  * @returns {boolean}
  */
-export const checkIfFileOrDirectoryExists = (path: string): boolean => {
-    return fs.existsSync(path);
+export const checkIfFileOrDirectoryExists = (path: string): Promise<void> => {
+    return fsp.access(path);
 };
 
 /**
@@ -20,13 +20,8 @@ export const checkIfFileOrDirectoryExists = (path: string): boolean => {
  *
  * @returns {Promise<Buffer>}
  */
-export const getFile = async (
-    path: string,
-    encoding: string,
-): Promise<string | Buffer> => {
-    const readFile = promisify(fs.readFile);
-
-    return encoding ? readFile(path) : readFile(path, {});
+export const getFile = async (path: string): Promise<string | Buffer> => {
+    return fsp.readFile(path, { encoding: 'utf8' });
 };
 
 /**
@@ -43,13 +38,11 @@ export const createFile = async (
     fileName: string,
     data: string,
 ): Promise<void> => {
-    if (!checkIfFileOrDirectoryExists(path)) {
-        fs.mkdirSync(path);
-    }
+    await checkIfFileOrDirectoryExists(path).catch((err) => {
+        throw new InternalServerErrorException(err);
+    });
 
-    const writeFile = promisify(fs.writeFile);
-
-    return await writeFile(`${path}/${fileName}`, data, 'utf8');
+    return fsp.writeFile(`${path}\\${fileName}`, data, { encoding: 'utf8' });
 };
 
 /**
@@ -60,7 +53,5 @@ export const createFile = async (
  * @returns {Promise<void>}
  */
 export const deleteFile = async (path: string): Promise<void> => {
-    const unlink = promisify(fs.unlink);
-
-    return await unlink(path);
+    return await fsp.unlink(path);
 };

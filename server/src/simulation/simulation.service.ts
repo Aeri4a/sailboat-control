@@ -4,39 +4,29 @@ import { spawn } from 'child_process';
 
 @Injectable()
 export class SimulationService {
-    async runPythonEngineSimulation() {
-        const exec = () =>
-            new Promise((resolve, reject) => {
-                const scriptPath = './main.py';
-                const pythonEngine = spawn('python', [scriptPath], {
-                    cwd: `${process.cwd()}\\python_engine`,
-                    env: process.env,
-                });
-
-                let datax = '';
-                let errorMsg = '';
-                pythonEngine.stdout.on('data', (data) => {
-                    datax += ` ${data.toString()}`;
-                });
-
-                pythonEngine.stderr.on('data', (data) => {
-                    errorMsg += ` ${data.toString()}`;
-                });
-
-                pythonEngine.on('close', (code) => {
-                    if (code !== 0) reject(errorMsg);
-                    else resolve(datax);
-                });
+    runPythonEngineSimulation() {
+        return new Promise<string>((resolve, reject) => {
+            const scriptPath = './main.py';
+            const pythonEngine = spawn('python', [scriptPath], {
+                cwd: `${process.cwd()}\\python_engine`,
+                env: process.env,
             });
 
-        return await exec();
+            let stdOutMessages: string = '';
+            let stdErrMessages: string = '';
 
-        // const path = './python_engine/test.py';
-        // const pythonEngine = spawn('python', [path], {
-        //     cwd: process.cwd(),
-        //     env: process.env,
-        // });
-        // pythonEngine.stdout.on('data', (data) => {
-        // });
+            pythonEngine.stdout.on('data', (data) => {
+                stdOutMessages += data.toString();
+            });
+
+            pythonEngine.stderr.on('data', (data) => {
+                stdErrMessages += data.toString();
+            });
+
+            pythonEngine.on('close', (code) => {
+                if (code !== 0) reject(stdErrMessages);
+                else resolve(stdOutMessages);
+            });
+        });
     }
 }

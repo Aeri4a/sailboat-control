@@ -1,48 +1,73 @@
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 import styles from './App.module.scss'
+
+import { useDispatch, useSelector } from './store';
+import { simSelector, simActions } from './store/slices/Simulation';
 
 import BoatSimulation from './components/BoatSimulationView';
 import VariableSection from './components/VariableSection';
 import VariableBox from './components/VariableBox';
 import ButtonBox from './components/ButtonBox';
+import Slider from './components/Slider';
+import Loader from './components/Loader';
 
 import { BoatData, WindData } from './types/commonTypes';
 
+import mapInputData from './utils/simulationInputMaper';
 import boatVarList from './data/boatVarList';
 import windVarList from './data/windVarList';
 import { initialBoatData, initialWindData } from './data/initialData';
-import Slider from './components/Slider';
 
 // CONSTANTS
 const FRAME_TIME = 100; // time between physics simulation steps [ms]
 
 const App: FC = () => {
-  const [boatData, setBoatData] = useState<BoatData>(initialBoatData);
-  const [windData, setWindData] = useState<WindData>(initialWindData);
+  const dispatch = useDispatch();
+  const { simulationData, loading: isSimLoading } = useSelector(simSelector);
+  const [windInputData, setWindInputData] = useState<WindData>(initialWindData);
+  const [boatInputData, setBoatInputData] = useState<BoatData>(initialBoatData);
 
   const [timeStamp, setTimeStamp] = useState(0);
   const [animRun, setAnimRun] = useState(false);
 
   const data = { time: [...Array(36000).keys()] };
+
+  const getSimulationData = () => {
+    const mappedData = mapInputData(boatInputData, windInputData);
+
+    dispatch(simActions.startSimulation(mappedData))
+    .unwrap()
+    .then(()=> {
+        console.log('good');
+    }).catch(err => {
+        console.log('bad: ', err);
+    })
+  }
   
   const handleStartAnimation = () => {
-    setAnimRun(true);
+    getSimulationData(); //
+    // setAnimRun(true);
   };
   
   const handleStopAnimation = () => {
     setAnimRun(false);
   };
 
-  const handleBoatDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setBoatData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
+  const handleBoatInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBoatInputData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
   };
 
-  const handleWindDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setWindData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
+  const handleWindInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setWindInputData(prevState => ({ ...prevState, [event.target.name]: event.target.value }));
   };
+
+  useEffect(() => {
+    console.log(simulationData);
+  }, [simulationData]);
 
   return (
     <div className={styles.appContainer}>
+      {isSimLoading && <Loader/>}
       <div className={styles.leftTile}>
         <div className={styles.header}>
           <div className={styles.sectionSelect}>
@@ -68,8 +93,8 @@ const App: FC = () => {
             {boatVarList.map(variable => (
               <VariableBox
                 name={variable.shortName}
-                value={boatData[variable.shortName as keyof BoatData]}
-                onValueChange={handleBoatDataChange}
+                value={boatInputData[variable.shortName as keyof BoatData]}
+                onValueChange={handleBoatInputDataChange}
                 maxValue={variable.max}
                 minValue={variable.min}
                 step={variable.step}
@@ -83,8 +108,8 @@ const App: FC = () => {
             {windVarList.map(variable => (
               <VariableBox
                 name={variable.shortName}
-                value={windData[variable.shortName as keyof WindData]}
-                onValueChange={handleWindDataChange}
+                value={windInputData[variable.shortName as keyof WindData]}
+                onValueChange={handleWindInputDataChange}
                 maxValue={variable.max}
                 minValue={variable.min}
                 step={variable.step}
@@ -120,7 +145,7 @@ const App: FC = () => {
             anim_running={animRun}
             frame_len={FRAME_TIME}
             time={data.time[timeStamp]}
-            boatData={boatData}
+            boatData={boatInputData}
           />
         </div>
       </div>
