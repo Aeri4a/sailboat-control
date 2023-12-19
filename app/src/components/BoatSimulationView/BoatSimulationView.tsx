@@ -1,9 +1,13 @@
-import { FC, useRef, useEffect } from 'react'
+import { FC, useRef, useEffect, useLayoutEffect } from 'react'
 import { BoatData, SimulationData } from '../../types/commonTypes'
 import style from './BoatSimulationView.module.scss'
-import background_img_source from '../../assets/background.png'
-import  boatSimulationMain  from './BoatSimulationMain'
+import boatSimulationMain from './BoatSimulationMain'
 import boatSimulationLeft from './BoatSimulationLeft'
+import defaultVertexShader from './shaders/default.vert?raw'
+import defaultFragmentShader from './shaders/default.frag?raw'
+import backgroundVertexShader from './shaders/background.vert?raw'
+import backgroundFragmentShader from './shaders/background.frag?raw'
+import { createShader, createProgram, BoatWebGLPrograms } from './BoatSimulationHelper'
 
 interface BoatSimulationProps {
     set_time: (new_state: (prev: number) => number) => void;
@@ -20,39 +24,36 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     const mainCanvasRef = useRef<HTMLCanvasElement>(null);
     const leftTopCanvasRef = useRef<HTMLCanvasElement>(null);
     const leftBottomCanvasRef = useRef<HTMLCanvasElement>(null);
+    
+    let boatWebGLProgramsRef = useRef<BoatWebGLPrograms>({default: null, background: null});
 
     let fix_dpi_required = useRef(false);
     let scale_ref = useRef(1);
-    let back_img_ref = useRef(new Image());
 
-    const load_image = (src: string, ref: React.MutableRefObject<HTMLImageElement>) =>{
-        const img = new Image();
-        img.src = src;
-        img.onload = () => {
-            ref.current = img;
-        }
+    const loadWebglProgram = (vert: string, frag: string, gl: WebGLRenderingContext) =>{
+        return createProgram(gl, createShader(gl, gl.VERTEX_SHADER, vert)!, createShader(gl, gl.FRAGMENT_SHADER, frag)!)!;
     }
 
-    useEffect(()=>{
-        load_image(background_img_source, back_img_ref);
+    useLayoutEffect(()=>{
+        const can = mainCanvasRef!.current!;
+        const gl = can.getContext("webgl")!;
+        boatWebGLProgramsRef.current.default = loadWebglProgram(defaultVertexShader.toString(), defaultFragmentShader.toString(), gl)!;
+        boatWebGLProgramsRef.current.background = loadWebglProgram(backgroundVertexShader.toString(), backgroundFragmentShader.toString(), gl)!;
     });
+
 
     const fix_dpi = (canvas: HTMLCanvasElement) => {
         const parent_style = getComputedStyle(canvas.parentElement!);
         const style_height = +parent_style.getPropertyValue("height").slice(0, -2);
         const style_width = +parent_style.getPropertyValue("width").slice(0, -2);
-        // canvas.width = style_width * devicePixelRatio;
-        // canvas.height = style_height * devicePixelRatio;
         canvas.width = style_width;
         canvas.height = style_height;
     };
     
-    const draw_frame = (frame_dt: number) => { // frame_dt will be used for interpolation
+    const draw_frame = (currentTime: number, frame_dt: number) => { // frame_dt will be used for interpolation
         const scale = scale_ref.current
-        const background_image = back_img_ref.current;
-        const ctx: CanvasRenderingContext2D = mainCanvasRef.current!.getContext('2d')!;
-        boatSimulationMain({ctx, time, frame_dt, frame_len, scale, boatData, background_image, simulationData});
         boatSimulationLeft(leftTopCanvasRef.current!.getContext('2d')!, leftBottomCanvasRef.current!.getContext('2d')!, boatData);
+        boatSimulationMain({gl:mainCanvasRef.current!.getContext('webgl')!, webGLPrograms:boatWebGLProgramsRef.current, time, frame_dt, frame_len, scale, boatData, simulationData, u_time:currentTime});
     };
     
     useEffect(() => {
@@ -81,7 +82,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
                 fix_dpi_required.current = false;
             }
 
-            draw_frame(time_diff / frame_len);
+            draw_frame(currentTime, time_diff / frame_len);
             animationFrameId = window.requestAnimationFrame(render);
         };
         animationFrameId = window.requestAnimationFrame(render);

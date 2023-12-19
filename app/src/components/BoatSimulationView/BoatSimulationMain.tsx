@@ -1,58 +1,76 @@
 import { BoatData, SimulationData } from '../../types/commonTypes'
-import interpolate from './BoatSimulationHelper';
+import {interpolate, BoatWebGLPrograms, bezierCurve} from './BoatSimulationHelper';
 
 interface boatSimulationMainParams {
-    ctx: CanvasRenderingContext2D;
+    gl: WebGLRenderingContext;
+    webGLPrograms: BoatWebGLPrograms;
     time: number;
     frame_dt: number;
     frame_len: number;
     scale: number;
     boatData: BoatData;
-    background_image: HTMLImageElement;
     simulationData: SimulationData | null;
+    u_time: number;
 }
 
-const hullTopColor = "#AE6C3F";
-const hullBorderColor = "#666666";
-const sailColor = "#ffffff";
-const mastColor = "#5F2E00";
-const sideColor = "#D8D8D8";
-const rudderColor = "#452100";
+const hullTopColor = [0.682, 0.424, 0.247, 1.0];
+const hullBorderColor = [0.4, 0.4, 0.4, 1.0];
+const sailColor = [1.0, 1.0, 1.0, 1.0];
+const mastColor = [0.373, 0.18, 0.0, 1.0];
+const sideColor = [0.847, 0.847, 0.847, 1.0];
+const rudderColor = [0.271, 0.129, 0.0, 1.0];
 
-const draw_background: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, scale, background_image, simulationData}) => {
-    const size = background_image.naturalWidth;
-    if (!size)
-        return;
-    const framec = background_image.naturalHeight / size;
-    const frameno = Math.floor((time + frame_dt)*2) % framec;
-
-    const w : number = ctx.canvas.width;
-    const h : number = ctx.canvas.height;
+const draw_background: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, simulationData, u_time}) =>{
+    const w : number = gl.canvas.width;
+    const h : number = gl.canvas.height;
     const m_to_ctx_h = 0.03 * h;
-
-    ctx.translate(w / 2, h / 2);
-    ctx.scale(scale, scale);
 
     const pos_x = -interpolate(time, frame_dt, simulationData?.positionX) * m_to_ctx_h;
     const pos_y = -interpolate(time, frame_dt, simulationData?.positionY) * m_to_ctx_h;
 
-    const x = (pos_x) % size - size;
-    const y = (pos_y) % size - size;
+    gl.useProgram(webGLPrograms.background!);
+    gl.viewport(0,0,w,h);
+    var positionLocation = gl.getAttribLocation(webGLPrograms.background!, "a_position");
+    var resolutionLocation = gl.getUniformLocation(webGLPrograms.background!, "u_resolution");
+    var timeLocation = gl.getUniformLocation(webGLPrograms.background!, "u_time");
+    var scaleLocation = gl.getUniformLocation(webGLPrograms.background!, "u_invScale");
+    var boatPosLocation = gl.getUniformLocation(webGLPrograms.background!, "u_boatPos");
+    var windRotLocation = gl.getUniformLocation(webGLPrograms.background!, "u_windRot");
+    
 
-    const by = (Math.floor(0.5*h/(size*scale))+1)*size;
-    const bx = (Math.floor(0.5*w/(size*scale))+1)*size;
+    gl.uniform1f(scaleLocation, 1/scale);
+    gl.uniform1f(windRotLocation, Math.atan2(simulationData?.windY[time] || 0, simulationData?.windX[time] || 0));
 
-    for(let iy = -by; iy < by + size; iy+=size){
-        for(let ix = -bx; ix < bx + size; ix+=size){
-            ctx.drawImage(background_image, 0, frameno * size, size, size, ix+x, iy+y, size, size);
-        }
-    }
-    ctx.resetTransform();
+    gl.uniform2f(resolutionLocation, w, h);
+    gl.uniform2f(boatPosLocation, pos_x, pos_y);
+    gl.uniform1f(timeLocation, u_time);
+    gl.enableVertexAttribArray(positionLocation);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    let data = [0,0,w,0,w,h,0,h];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
 }
 
-const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame_dt, frame_len, scale, boatData, simulationData}) => {
-    const w : number = ctx.canvas.width;
-    const h : number = ctx.canvas.height;
+const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, boatData, simulationData}) => {
+    const w : number = gl.canvas.width;
+    const h : number = gl.canvas.height;
+
+    gl.useProgram(webGLPrograms.default!);
+    gl.viewport(0,0,w,h);
+
+    var positionLocation = gl.getAttribLocation(webGLPrograms.default!, "a_position");
+    var resolutionLocation = gl.getUniformLocation(webGLPrograms.default!, "u_resolution");
+    var colorLocation = gl.getUniformLocation(webGLPrograms.default!, "u_color");
+
+    gl.uniform2f(resolutionLocation, w, h);
+    gl.enableVertexAttribArray(positionLocation);
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    let data = [];
 
     // boat params
     const m_to_ctx_h = 0.03 * h;
@@ -67,10 +85,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     const rel_sail_yaw = interpolate(time, frame_dt, simulationData?.sailPosition) * 180 / Math.PI;
     const rel_rudder_yaw = interpolate(time, frame_dt, simulationData?.rudderPosition) * 180 / Math.PI;
 
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    const tr3d = DOMMatrix.fromMatrix(ctx.getTransform());
+    const tr3d = new DOMMatrix();
     const trPoint = (x : number, y : number, z : number) => {
         return tr3d.transformPoint(new DOMPoint(x,y,z));
     }
@@ -96,64 +111,66 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     const hRTb = trPoint(0.1*W,-0.5*L,H);
     const h0T = trPoint(0,-0.5*L,H);
     const hLTb = trPoint(-0.1*W,-0.5*L,H);
-    
-    ctx.fillStyle = sideColor;
+
+    gl.uniform4fv(colorLocation, sideColor);
     const h0T0 = trPoint(0,-0.5*L,0);
-    ctx.beginPath();
-    ctx.moveTo(h0T.x,h0T.y);
+    data = [h0T.x,h0T.y];
     if(roll < 0){
-        ctx.bezierCurveTo(hRTb.x,hRTb.y,hR0.x,hR0.y,hR0.x,hR0.y);
-        ctx.bezierCurveTo(hR0.x,hR0.y,hRBb.x,hRBb.y,hRB.x,hRB.y);
+        bezierCurve(hRTb.x,hRTb.y,hR0.x,hR0.y,hR0.x,hR0.y,data);
+        bezierCurve(hR0.x,hR0.y,hRBb.x,hRBb.y,hRB.x,hRB.y,data);
         const hRB0 = trPoint(0.3*W,0.5*L,0);
         const hRBb0 = trPoint(0.5*W,0.5*L,0);
         const hR00 = trPoint(0.5*W,0,0);
         const hRTb0 = trPoint(0.1*W,-0.5*L,0);
-        ctx.lineTo(hRB0.x,hRB0.y);
-        ctx.bezierCurveTo(hRBb0.x,hRBb0.y,hR00.x,hR00.y,hR00.x,hR00.y);
-        ctx.bezierCurveTo(hR00.x,hR00.y,hRTb0.x,hRTb0.y,h0T0.x,h0T0.y); 
+        data.push(hRB0.x,hRB0.y);
+        bezierCurve(hRBb0.x,hRBb0.y,hR00.x,hR00.y,hR00.x,hR00.y,data);
+        bezierCurve(hR00.x,hR00.y,hRTb0.x,hRTb0.y,h0T0.x,h0T0.y,data); 
     }
     else{
-        ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
-        ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
+        bezierCurve(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y,data);
+        bezierCurve(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y,data);
         const hL00 = trPoint(-0.5*W,0,0);
         const hLBb0 = trPoint(-0.5*W,0.5*L,0);
         const hLB0 = trPoint(-0.3*W,0.5*L,0);
         const hLTb0 = trPoint(-0.1*W,-0.5*L,0);
-        ctx.lineTo(hLB0.x,hLB0.y);
-        ctx.bezierCurveTo(hLBb0.x,hLBb0.y,hL00.x,hL00.y,hL00.x,hL00.y);
-        ctx.bezierCurveTo(hL00.x,hL00.y,hLTb0.x,hLTb0.y,h0T0.x,h0T0.y);
+        data.push(hLB0.x,hLB0.y);
+        bezierCurve(hLBb0.x,hLBb0.y,hL00.x,hL00.y,hL00.x,hL00.y,data);
+        bezierCurve(hL00.x,hL00.y,hLTb0.x,hLTb0.y,h0T0.x,h0T0.y,data);
     }
-    ctx.lineTo(h0T.x,h0T.y);
-    ctx.closePath();
-    ctx.fill();
+    data.push(h0T.x,h0T.y);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
     
-    ctx.fillStyle = hullTopColor;
-    ctx.strokeStyle = hullBorderColor;
-    ctx.lineWidth = 2;
+    gl.uniform4fv(colorLocation, hullTopColor);
+    data = [hL0.x,hL0.y];
 
-    ctx.beginPath();
-    ctx.moveTo(hL0.x,hL0.y);
-    ctx.bezierCurveTo(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y);
-    ctx.lineTo(hRB.x,hRB.y);
-    ctx.bezierCurveTo(hRBb.x,hRBb.y,hR0.x,hR0.y,hR0.x,hR0.y);
-    ctx.bezierCurveTo(hR0.x,hR0.y,hRTb.x,hRTb.y,h0T.x,h0T.y);
-    ctx.bezierCurveTo(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y);
+    bezierCurve(hL0.x,hL0.y,hLBb.x,hLBb.y,hLB.x,hLB.y, data);
+    data.push(hRB.x,hRB.y)
+    bezierCurve(hRBb.x,hRBb.y,hR0.x,hR0.y,hR0.x,hR0.y,data);
+    bezierCurve(hR0.x,hR0.y,hRTb.x,hRTb.y,h0T.x,h0T.y,data);
+    bezierCurve(hLTb.x,hLTb.y,hL0.x,hL0.y,hL0.x,hL0.y,data);
 
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
+
+    gl.uniform4fv(colorLocation, hullBorderColor);
+    gl.drawArrays(gl.LINE_STRIP, 0, data.length / 2);
 
     //rudder steer
     tr3d.translateSelf(0,0.35*L);
     tr3d.rotateSelf(0,0,rel_rudder_yaw);
     
-    ctx.strokeStyle = rudderColor;
+    gl.uniform4fv(colorLocation, rudderColor);
     const r00 = trPoint(0,0,H);
     const r0B = trPoint(0,0.1*L,H);
-    ctx.beginPath();
-    ctx.moveTo(r00.x,r00.y);
-    ctx.lineTo(r0B.x,r0B.y);
-    ctx.stroke();
+    data = [r00.x,r00.y];
+    data.push(r0B.x,r0B.y);
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINES, 0, data.length / 2);
 
     tr3d.rotateSelf(0,0,-rel_rudder_yaw);
     tr3d.translateSelf(0,-0.35*L);
@@ -164,36 +181,36 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({ctx, time, frame
     tr3d.translateSelf(0,-0.22*L,0);
     tr3d.rotateSelf(0,0,rel_sail_yaw);
     
-    ctx.fillStyle = sailColor;
+    gl.uniform4fv(colorLocation, sailColor);
     const s00M = trPoint(0,0,H+0.1*Hs);
     const s00T = trPoint(0,0,H+1.1*Hs);
     const s00B = trPoint(0,0,H);
     const s0BM = trPoint(0,0.66*Hs,H+0.1*Hs);
 
-    ctx.beginPath();
-    ctx.moveTo(s00M.x,s00M.y);
-    ctx.lineTo(s00T.x,s00T.y);
-    ctx.lineTo(s0BM.x,s0BM.y);
-    ctx.lineTo(s00M.x,s00M.y);
-    ctx.fill();
+    data = [s00M.x,s00M.y];
+    data.push(s00T.x,s00T.y);
+    data.push(s0BM.x,s0BM.y);
+    data.push(s00M.x,s00M.y);
 
-    ctx.strokeStyle = mastColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(s0BM.x,s0BM.y);
-    ctx.lineTo(s00M.x,s00M.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(s00B.x,s00B.y);
-    ctx.lineTo(s00T.x,s00T.y);
-    ctx.stroke();
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
+
+    gl.uniform4fv(colorLocation, mastColor);
+    data = [s0BM.x,s0BM.y];
+    data.push(s00M.x,s00M.y);
+    data.push(s00B.x,s00B.y);
+    data.push(s00T.x,s00T.y);
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINES, 0, data.length / 2);
 }
+
 
 const boatSimulationMain: (params: boatSimulationMainParams) => void = (params) => {
-    const ctx = params.ctx;
-    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+    params.gl.clear(params.gl.COLOR_BUFFER_BIT);
     draw_background(params);
     draw_boat(params);
-}
-
+};
 export default boatSimulationMain;
