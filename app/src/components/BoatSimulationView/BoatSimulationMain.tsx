@@ -25,17 +25,17 @@ const draw_background: (params: boatSimulationMainParams) => void = ({gl, webGLP
     const h : number = gl.canvas.height;
     const m_to_ctx_h = 0.03 * h;
 
-    const pos_x = -interpolate(time, frame_dt, simulationData?.positionX) * m_to_ctx_h;
-    const pos_y = -interpolate(time, frame_dt, simulationData?.positionY) * m_to_ctx_h;
+    const pos_x = interpolate(time, frame_dt, simulationData?.positionX) * m_to_ctx_h;
+    const pos_y = interpolate(time, frame_dt, simulationData?.positionY) * m_to_ctx_h;
 
     gl.useProgram(webGLPrograms.background!);
     gl.viewport(0,0,w,h);
-    var positionLocation = gl.getAttribLocation(webGLPrograms.background!, "a_position");
-    var resolutionLocation = gl.getUniformLocation(webGLPrograms.background!, "u_resolution");
-    var timeLocation = gl.getUniformLocation(webGLPrograms.background!, "u_time");
-    var scaleLocation = gl.getUniformLocation(webGLPrograms.background!, "u_invScale");
-    var boatPosLocation = gl.getUniformLocation(webGLPrograms.background!, "u_boatPos");
-    var windRotLocation = gl.getUniformLocation(webGLPrograms.background!, "u_windRot");
+    const positionLocation = gl.getAttribLocation(webGLPrograms.background!, "a_position");
+    const resolutionLocation = gl.getUniformLocation(webGLPrograms.background!, "u_resolution");
+    const timeLocation = gl.getUniformLocation(webGLPrograms.background!, "u_time");
+    const scaleLocation = gl.getUniformLocation(webGLPrograms.background!, "u_invScale");
+    const boatPosLocation = gl.getUniformLocation(webGLPrograms.background!, "u_boatPos");
+    const windRotLocation = gl.getUniformLocation(webGLPrograms.background!, "u_windRot");
     
 
     gl.uniform1f(scaleLocation, 1/scale);

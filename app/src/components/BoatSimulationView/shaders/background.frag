@@ -36,38 +36,49 @@ float noise(vec3 P) {
 }
 float noise(vec2 P) { return noise(vec3(P, 0.0)); }
 
-const vec4 color1 = vec4(0.0118, 0.2471, 0.6784, 1.0);
+const vec4 color1 = vec4(0.1059, 0.302, 0.6706, 1.0);
 const vec4 color2 = vec4(0.0, 0.2196, 0.6275, 1.0);
-const float windR = 1.5;
+const vec4 color3 = vec4(0.5216, 0.6902, 1.0, 1.0);
 
 uniform float u_time;
 uniform float u_invScale;
+uniform vec2 u_boatPos;
 uniform float u_windRot;
 
-uniform vec2 u_boatPos;
-
 varying vec2 resolution;
+varying vec2 pos;
 
-mat2 rot(float a){
+mat3 rot(float a){
     float sina = sin(a);
     float cosa = cos(a);
-    return mat2(cosa, sina, -sina, cosa);
+    return mat3(
+        cosa, -sina, 0,
+        sina, cosa, 0,
+        0, 0, 1
+    );
 }
 
-mat2 scale(float sx, float sy){
-    return mat2(sx, 0, 0, sy);
+mat3 tr(vec2 off){
+    return mat3(
+        1, 0, 0,
+        0, 1, 0,
+        off.x, off.y, 1
+    );
+}
+
+mat3 scale(vec2 scale){
+    return mat3(
+        scale.x, 0, 0,
+        0, scale.y, 0,
+        0, 0, 1
+    );
 }
 
 void main() {
-    vec2 halfResolution = resolution * 0.5;
+    vec2 st_boatPos = 2.0 * u_boatPos / resolution - 1.0;
+    vec2 wave_pos = (scale(vec2(3., 10.)) * tr(vec2(0.0, u_time * 0.0001)) *  rot(u_windRot) * tr(st_boatPos) * scale(vec2(u_invScale)) * vec3(pos,1.0)).xy;
+    float n = noise(vec3(wave_pos, u_time *.0001));
 
-    vec2 pos = (gl_FragCoord.xy - halfResolution) * u_invScale + halfResolution;
-
-    vec2 wave_pos = rot(u_windRot) * scale(.002, .01) * pos;// + u_boatPos * .01;// * vec2(1.0, -1.0);
-    float n1 = noise(vec3(wave_pos, u_time *.0006));
-    // float n2 = noise(gl_FragCoord.xy * .005);
-
-    // float m = smoothstep(.0, .4, n1-.1);// - smoothstep(.0, .2, n1-.3);
-
-    gl_FragColor = mix(color2, color1, n1);
+    vec4 wave_top = mix(color1, color3, smoothstep(0.6,1.0,n));
+    gl_FragColor = mix(color2, wave_top, smoothstep(-1.0, 0.6, n));
 }
