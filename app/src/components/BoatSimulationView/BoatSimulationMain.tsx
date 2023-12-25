@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { BoatData, SimulationData } from '../../types/commonTypes'
 import {interpolate, BoatWebGLPrograms, bezierCurve} from './BoatSimulationHelper';
 
@@ -11,6 +12,7 @@ interface boatSimulationMainParams {
     boatData: BoatData;
     simulationData: SimulationData | null;
     u_time: number;
+    particleDataRef: React.MutableRefObject<number[]>;
 }
 
 const hullTopColor = [0.682, 0.424, 0.247, 1.0];
@@ -54,7 +56,57 @@ const draw_background: (params: boatSimulationMainParams) => void = ({gl, webGLP
     gl.drawArrays(gl.TRIANGLE_FAN, 0, data.length / 2);
 }
 
-const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, boatData, simulationData}) => {
+const particle_life = 500.0;
+const draw_particles = (gl: WebGLRenderingContext, u_time: number, spawn_times_ref: React.MutableRefObject<number[]>, webGLPrograms: BoatWebGLPrograms) => {
+    const w : number = gl.canvas.width;
+    const h : number = gl.canvas.height;
+
+    let spawn_times = spawn_times_ref.current!;
+    while(u_time - spawn_times[0] > particle_life)
+        spawn_times.shift();
+
+    console.log(spawn_times.length);
+    if(spawn_times.length <= 0)
+        return;
+
+    let positions: number[] = [];
+    let time_data: number[] = [];
+    for(let i = 0; i < spawn_times.length; i++){
+        positions.push(-10,-10, 10,-10, 10,10);
+        positions.push(-10,-10, -10,10, 10,10);
+        const t = spawn_times[i];
+        time_data.push(t, t, t, t, t, t);
+    }
+
+    gl.useProgram(webGLPrograms.particle!);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.viewport(0,0,w,h);
+    const resolutionLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_resolution");
+    const timeLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_time");
+    const lifeTimeLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_lifeTime");
+    gl.uniform2f(resolutionLocation, w, h);
+    gl.uniform1f(timeLocation, u_time);
+    gl.uniform1f(lifeTimeLocation, particle_life);
+    
+    const pos_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pos_buffer);
+    const positionLocation = gl.getAttribLocation(webGLPrograms.particle!, "a_position");
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(positionLocation);
+    
+    const time_buffer = gl.createBuffer();
+    const spawnTimeLocation = gl.getAttribLocation(webGLPrograms.particle!, "a_spawnTime");
+    gl.bindBuffer(gl.ARRAY_BUFFER, time_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(time_data), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(spawnTimeLocation, 1, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(spawnTimeLocation);
+
+    gl.drawArrays(gl.TRIANGLES, 0, time_data.length);
+}
+
+const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, boatData, simulationData, u_time, particleDataRef}) => {
     const w : number = gl.canvas.width;
     const h : number = gl.canvas.height;
 
@@ -157,6 +209,13 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLProgram
 
     gl.uniform4fv(colorLocation, hullBorderColor);
     gl.drawArrays(gl.LINE_STRIP, 0, data.length / 2);
+
+    //particles
+    if(Math.floor(u_time) % 20 == 0)
+        particleDataRef.current.push(u_time);
+    draw_particles(gl, u_time, particleDataRef, webGLPrograms);
+    gl.useProgram(webGLPrograms.default!);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
     //rudder steer
     tr3d.translateSelf(0,0.35*L);

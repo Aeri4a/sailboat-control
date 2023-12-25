@@ -76,7 +76,7 @@ mat3 scale(vec2 scale){
 
 void main() {
     vec2 st_boatPos = 2.0 * u_boatPos / resolution - 1.0;
-    vec2 wave_pos = (scale(vec2(3., 10.)) * tr(vec2(0.0, u_time * 0.0001)) *  rot(u_windRot) * tr(st_boatPos) * scale(vec2(u_invScale)) * vec3(pos,1.0)).xy;
+    vec2 wave_pos = (scale(vec2(3., 10.)) * tr(vec2(0.0, u_time * 0.000)) *  rot(u_windRot) * tr(st_boatPos) * scale(vec2(u_invScale)) * vec3(pos,1.0)).xy;
     float n = noise(vec3(wave_pos, u_time *.0001));
 
     vec4 wave_top = mix(color1, color3, smoothstep(0.6,1.0,n));

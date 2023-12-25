@@ -7,6 +7,8 @@ import defaultVertexShader from './shaders/default.vert?raw'
 import defaultFragmentShader from './shaders/default.frag?raw'
 import backgroundVertexShader from './shaders/background.vert?raw'
 import backgroundFragmentShader from './shaders/background.frag?raw'
+import particleVertexShader from './shaders/particle.vert?raw'
+import particleFragmentShader from './shaders/particle.frag?raw'
 import { createShader, createProgram, BoatWebGLPrograms } from './BoatSimulationHelper'
 
 interface BoatSimulationProps {
@@ -25,10 +27,12 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     const leftTopCanvasRef = useRef<HTMLCanvasElement>(null);
     const leftBottomCanvasRef = useRef<HTMLCanvasElement>(null);
     
-    let boatWebGLProgramsRef = useRef<BoatWebGLPrograms>({default: null, background: null});
+    let boatWebGLProgramsRef = useRef<BoatWebGLPrograms>({default: null, background: null, particle: null});
 
     let fix_dpi_required = useRef(false);
     let scale_ref = useRef(1);
+    let localTimeRef = useRef(0);
+    let particleDataRef = useRef<number[]>([]);
 
     const loadWebglProgram = (vert: string, frag: string, gl: WebGLRenderingContext) =>{
         return createProgram(gl, createShader(gl, gl.VERTEX_SHADER, vert)!, createShader(gl, gl.FRAGMENT_SHADER, frag)!)!;
@@ -39,6 +43,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
         const gl = can.getContext("webgl")!;
         boatWebGLProgramsRef.current.default = loadWebglProgram(defaultVertexShader.toString(), defaultFragmentShader.toString(), gl)!;
         boatWebGLProgramsRef.current.background = loadWebglProgram(backgroundVertexShader.toString(), backgroundFragmentShader.toString(), gl)!;
+        boatWebGLProgramsRef.current.particle = loadWebglProgram(particleVertexShader.toString(), particleFragmentShader.toString(), gl)!;
     });
 
 
@@ -53,8 +58,12 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
     const draw_frame = (currentTime: number, frame_dt: number) => { // frame_dt will be used for interpolation
         const scale = scale_ref.current
         boatSimulationLeft(leftTopCanvasRef.current!.getContext('2d')!, leftBottomCanvasRef.current!.getContext('2d')!, boatData);
-        boatSimulationMain({gl:mainCanvasRef.current!.getContext('webgl')!, webGLPrograms:boatWebGLProgramsRef.current, time, frame_dt, frame_len, scale, boatData, simulationData, u_time:currentTime});
+        boatSimulationMain({gl:mainCanvasRef.current!.getContext('webgl')!, webGLPrograms:boatWebGLProgramsRef.current, time:localTimeRef.current, frame_dt, frame_len, scale, boatData, simulationData, u_time:currentTime, particleDataRef});
     };
+
+    useEffect(() => {
+        localTimeRef.current = time;
+    },[time]);
     
     useEffect(() => {
         let animationFrameId: number;
@@ -91,7 +100,7 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
             window.cancelAnimationFrame(animationFrameId)
         };
 
-    },[time,anim_running,boatData,simulationData]);
+    },[anim_running,boatData,simulationData]);
 
     useEffect(() => {
         const observer = new ResizeObserver(() => {

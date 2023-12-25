@@ -65,4 +65,5 @@ export function bezierCurve(x2:number,y2:number,x3:number,y3:number,x4:number,y4
 export interface BoatWebGLPrograms{
     default: WebGLProgram | null;
     background: WebGLProgram | null;
+    particle: WebGLProgram | null;
 }
