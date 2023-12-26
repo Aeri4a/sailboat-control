@@ -66,7 +66,7 @@ const draw_particles: (params: boatSimulationMainParams) => void = ({gl, webGLPr
 
     
     let spawn_times = particleDataRef.current!;
-    if(Math.floor(u_time) % 10 == 0)
+    if(Math.floor(u_time * 10) % 5 == 0)
         spawn_times.push(u_time);
 
     while(u_time - spawn_times[0] > particle_life)
@@ -120,7 +120,7 @@ const draw_particles: (params: boatSimulationMainParams) => void = ({gl, webGLPr
     gl.drawArrays(gl.TRIANGLES, 0, time_data.length);
 }
 
-const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, boatData, simulationData, u_time, particleDataRef}) => {
+const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, time, frame_dt, scale, boatData, simulationData}) => {
     const w : number = gl.canvas.width;
     const h : number = gl.canvas.height;
 
