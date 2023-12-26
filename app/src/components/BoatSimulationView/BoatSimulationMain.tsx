@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { BoatData, SimulationData } from '../../types/commonTypes'
 import {interpolate, BoatWebGLPrograms, bezierCurve} from './BoatSimulationHelper';
 
@@ -57,23 +56,30 @@ const draw_background: (params: boatSimulationMainParams) => void = ({gl, webGLP
 }
 
 const particle_life = 500.0;
-const draw_particles = (gl: WebGLRenderingContext, u_time: number, spawn_times_ref: React.MutableRefObject<number[]>, webGLPrograms: BoatWebGLPrograms) => {
+const draw_particles: (params: boatSimulationMainParams) => void = ({gl, webGLPrograms, u_time, particleDataRef, boatData, simulationData, scale, time}) => {
     const w : number = gl.canvas.width;
     const h : number = gl.canvas.height;
+    const m_to_ctx_h = 0.03 * h;
 
-    let spawn_times = spawn_times_ref.current!;
+    const b = boatData.length * 0.5 * m_to_ctx_h;
+    const bw = boatData.wtlr * b;
+
+    
+    let spawn_times = particleDataRef.current!;
+    if(Math.floor(u_time) % 10 == 0)
+        spawn_times.push(u_time);
+
     while(u_time - spawn_times[0] > particle_life)
         spawn_times.shift();
 
-    console.log(spawn_times.length);
     if(spawn_times.length <= 0)
         return;
 
     let positions: number[] = [];
     let time_data: number[] = [];
     for(let i = 0; i < spawn_times.length; i++){
-        positions.push(-10,-10, 10,-10, 10,10);
-        positions.push(-10,-10, -10,10, 10,10);
+        positions.push(-10.0,-10.0, 10.0,-10.0, 10.0,10.0);
+        positions.push(-10.0,-10.0, -10.0,10.0, 10.0,10.0);
         const t = spawn_times[i];
         time_data.push(t, t, t, t, t, t);
     }
@@ -85,9 +91,17 @@ const draw_particles = (gl: WebGLRenderingContext, u_time: number, spawn_times_r
     const resolutionLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_resolution");
     const timeLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_time");
     const lifeTimeLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_lifeTime");
+    const scaleLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_scale");
+    const rotLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_rot");
+    const offLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_off");
+    const bwLocation = gl.getUniformLocation(webGLPrograms.particle!, "u_w");
     gl.uniform2f(resolutionLocation, w, h);
     gl.uniform1f(timeLocation, u_time);
     gl.uniform1f(lifeTimeLocation, particle_life);
+    gl.uniform1f(scaleLocation, scale);
+    gl.uniform1f(rotLocation, simulationData?.yaw[time] || 0);
+    gl.uniform1f(offLocation, b);
+    gl.uniform1f(bwLocation, bw);
     
     const pos_buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, pos_buffer);
@@ -210,13 +224,6 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLProgram
     gl.uniform4fv(colorLocation, hullBorderColor);
     gl.drawArrays(gl.LINE_STRIP, 0, data.length / 2);
 
-    //particles
-    if(Math.floor(u_time) % 20 == 0)
-        particleDataRef.current.push(u_time);
-    draw_particles(gl, u_time, particleDataRef, webGLPrograms);
-    gl.useProgram(webGLPrograms.default!);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
     //rudder steer
     tr3d.translateSelf(0,0.35*L);
     tr3d.rotateSelf(0,0,rel_rudder_yaw);
@@ -270,6 +277,7 @@ const draw_boat: (params: boatSimulationMainParams) => void = ({gl, webGLProgram
 const boatSimulationMain: (params: boatSimulationMainParams) => void = (params) => {
     params.gl.clear(params.gl.COLOR_BUFFER_BIT);
     draw_background(params);
+    draw_particles(params)
     draw_boat(params);
 };
 export default boatSimulationMain;
