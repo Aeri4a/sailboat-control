@@ -4,12 +4,14 @@ export enum PythonEngineStatus {
     DONE = 'done',
 }
 
-export interface BoatData {
+export interface SimulationInputData {
     length: number;
-    wtlr: number;
-    hhtlr: number;
-    satlsr: number;
-    katsar: number;
-    ratsar: number;
-    bmtuhm: number;
+    widthToLength: number;
+    hullHeightToLength: number;
+    sailAreaToLengthSquared: number;
+    keelAreaToLengthSquared: number;
+    rudderAreaToLengthSquared: number;
+    ballastToUpperHullMass: number;
+    windSpeed: number;
+    targetDirection: number;
 }
