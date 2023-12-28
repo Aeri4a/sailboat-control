@@ -63,6 +63,9 @@ class Boat:
         self.roll_inertia = self.hull_mass * ((self.width ** 2 + self.height**2) / 12 + self.height ** 2 / 4)\
         + self.ballast_mass * (self.hull_depth + self.keel_depth)**2
         self.yaw_inertia = self.mass * self.length ** 2 / 12
+
+        self.yaw = input_data["targetDirection"]
+        self.sail_position = max(-5*math.pi/12,min(5*math.pi/12,-input_data["targetDirection"])/2)
      
     def get_hull_wind(self,wind):
         return np.matmul(wind - self.velocity, rotation_matrix(-self.yaw))
