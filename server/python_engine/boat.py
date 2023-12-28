@@ -1,12 +1,8 @@
 import math
 import numpy as np
-import matplotlib.pyplot as plt
 
 from vector_math import *
 from controllers import *
-
-import json
-
 
 # Constants
 WATER_DENSITY = 1000
@@ -41,26 +37,26 @@ class Boat:
 
     position = np.array([0.0, 0.0])
     velocity = np.array([0.0, 0.0])
-    yaw = -math.pi / 2
+    yaw = math.pi / 2
     yaw_speed = 0.0
     roll = 0.0
     roll_speed = 0.0
     rudder_position = 0.0
-    sail_position = math.pi / 4
+    sail_position = -math.pi / 12
 
     def __init__(self, input_data):
         self.length = input_data["length"]
-        self.width = input_data["width_to_length"] * self.length
-        self.height = input_data["hull_height_to_length"] * self.length
-        self.sail_area = input_data["sail_area_to_length_squared"] * self.length ** 2
+        self.width = input_data["widthToLength"] * self.length
+        self.height = input_data["hullHeightToLength"] * self.length
+        self.sail_area = input_data["sailAreaToLengthSquared"] * self.length ** 2
         self.sail_height = 3 * (self.sail_area / 6) ** 0.5
         self.boom_height = 0.1*self.sail_height
-        self.keel_area = input_data["keel_to_sail_area"] * self.sail_area
+        self.keel_area = input_data["keelAreaToLengthSquared"] * self.length ** 2
         self.keel_length = self.keel_area ** 0.5
         self.keel_depth = self.keel_area ** 0.5
-        self.rudder_area = input_data["rudder_to_sail_area"] * self.sail_area
+        self.rudder_area = input_data["rudderAreaToLengthSquared"] * self.length ** 2
         self.rudder_depth = 2* self.rudder_area ** 0.5
-        self.ballast_mass = input_data["ballast_to_upper_hull_mass"] * self.length * self.width * self.height * BOAT_DENSITY
+        self.ballast_mass = input_data["ballastToUpperHullMass"] * self.length * self.width * self.height * BOAT_DENSITY
         self.hull_depth = (self.height * BOAT_DENSITY + self.ballast_mass / (self.length * self.width)) / WATER_DENSITY
         self.hull_mass = self.length * self.width * (self.height + self.hull_depth) * BOAT_DENSITY
         self.mass = self.hull_mass + self.ballast_mass
@@ -110,7 +106,7 @@ class Boat:
         return np.matmul((np.array([1,0]) * lift_force_magnitude), rotation_matrix(lift_force_angle))
     
      
-    def get_sail_drag(self, wind):  # angle decreases - fix
+    def get_sail_drag(self, wind):
         sail_wind = self.get_sail_wind(wind)
         wind_magnitude = np.linalg.norm(sail_wind)
         exposed_sail = abs(sail_wind[1]) * math.cos(self.roll)
