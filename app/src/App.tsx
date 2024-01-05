@@ -10,22 +10,28 @@ import VariableBox from './components/VariableBox';
 import ButtonBox from './components/ButtonBox';
 import Slider from './components/Slider';
 import Loader from './components/Loader';
+import Charts from './components/Charts';
 
-import { BoatData, WindData } from './types/commonTypes';
+import { BoatData, TargetData, WindData, Tab } from './types/commonTypes';
 
 import mapInputData from './utils/simulationInputMaper';
 import boatVarList from './data/boatVarList';
 import windVarList from './data/windVarList';
-import { initialBoatData, initialWindData } from './data/initialData';
+import { initialBoatData, initialTargetData, initialWindData } from './data/initialData';
+
+const activeTabStyle = { backgroundColor: '#1394ab', color: 'white' };
 
 // CONSTANTS
 const FRAME_TIME = 100; // time between physics simulation steps [ms]
 
 const App: FC = () => {
   const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.VARIABLES);
+
   const { simulationData, loading: isSimLoading } = useSelector(simSelector);
   const [windInputData, setWindInputData] = useState<WindData>(initialWindData);
   const [boatInputData, setBoatInputData] = useState<BoatData>(initialBoatData);
+  const [targetInputData, setTargetInputData] = useState<TargetData>(initialTargetData);
 
   const [timeStamp, setTimeStamp] = useState(0);
   const [animRun, setAnimRun] = useState(false);
@@ -33,7 +39,11 @@ const App: FC = () => {
   const data = { time: [...Array(36000).keys()] };
 
   const getSimulationData = () => {
-    const mappedData = mapInputData(boatInputData, windInputData);
+    const mappedData = mapInputData(
+      boatInputData,
+      windInputData,
+      targetInputData.value
+    );
 
     dispatch(simActions.startSimulation(mappedData))
     .unwrap()
@@ -46,8 +56,7 @@ const App: FC = () => {
   }
   
   const handleStartAnimation = () => {
-    getSimulationData(); //
-    // setAnimRun(true);
+    getSimulationData();
   };
   
   const handleStopAnimation = () => {
@@ -62,6 +71,10 @@ const App: FC = () => {
     setWindInputData(prevState => ({ ...prevState, [event.target.name]: +event.target.value }));
   };
 
+  const handleTargetInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setTargetInputData(prevState => ({ ...prevState, value: +event.target.value }));
+  };
+
   useEffect(() => {
     console.log(simulationData);
   }, [simulationData]);
@@ -74,13 +87,15 @@ const App: FC = () => {
           <div className={styles.sectionSelect}>
             <div 
               className={styles.section}
-              style={{ backgroundColor: '#1394ab', color: 'white' }} // change to 'active' class
+              style={activeTab === Tab.VARIABLES ? activeTabStyle : {}}
+              onClick={() => setActiveTab(Tab.VARIABLES)}
             >
               Variables
             </div>
             <div
               className={styles.section}
-              // style={{ backgroundColor: '#1394ab', color: 'white' }}
+              style={activeTab === Tab.STATISTICS ? activeTabStyle : {}}
+              onClick={() => setActiveTab(Tab.STATISTICS)}
             >
               Statistics
             </div>
@@ -89,38 +104,54 @@ const App: FC = () => {
             Sailboat
           </div>
         </div>
-        <div className={styles.actionPanel}> {/*switch here between vars-stats*/}
-          <VariableSection subTitle='Boat'>
-            {boatVarList.map(variable => (
-              <VariableBox
-                name={variable.shortName}
-                value={boatInputData[variable.shortName as keyof BoatData]}
-                onValueChange={handleBoatInputDataChange}
-                maxValue={variable.max}
-                minValue={variable.min}
-                step={variable.step}
-                description={variable.name}
-                unit={variable.unit}
-              />
-            ))}
-          </VariableSection>
+        {activeTab === Tab.VARIABLES
+          ? (<div className={styles.actionPanel}>
+              <VariableSection subTitle='Boat'>
+                {boatVarList.map(variable => (
+                  <VariableBox
+                    name={variable.shortName}
+                    value={boatInputData[variable.shortName as keyof BoatData]}
+                    onValueChange={handleBoatInputDataChange}
+                    maxValue={variable.max}
+                    minValue={variable.min}
+                    step={variable.step}
+                    description={variable.name}
+                    unit={variable.unit}
+                  />
+                ))}
+              </VariableSection>
 
-          <VariableSection subTitle='Wind'>
-            {windVarList.map(variable => (
-              <VariableBox
-                name={variable.shortName}
-                value={windInputData[variable.shortName as keyof WindData]}
-                onValueChange={handleWindInputDataChange}
-                maxValue={variable.max}
-                minValue={variable.min}
-                step={variable.step}
-                description={variable.name}
-                unit={variable.unit}
-              />
-            ))}
-          </VariableSection>
+              <VariableSection subTitle='Wind'>
+                {windVarList.map(variable => (
+                  <VariableBox
+                    name={variable.shortName}
+                    value={windInputData[variable.shortName as keyof WindData]}
+                    onValueChange={handleWindInputDataChange}
+                    maxValue={variable.max}
+                    minValue={variable.min}
+                    step={variable.step}
+                    description={variable.name}
+                    unit={variable.unit}
+                  />
+                ))}
+              </VariableSection>
 
-        </div>
+              <VariableSection subTitle='Target'>
+                  <VariableBox
+                    name='Destination'
+                    value={targetInputData.value}
+                    onValueChange={handleTargetInputDataChange}
+                    maxValue={targetInputData.maxValue}
+                    minValue={targetInputData.minValue}
+                    step={targetInputData.step}
+                    description='Destination'
+                    unit=''
+                  />
+              </VariableSection>
+              </div>)
+        : (<Charts/>)
+        }
+        
       </div>
       <div className={styles.rightTile}>
         <div className={styles.timeLineTile}>

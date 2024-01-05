@@ -34,7 +34,7 @@ const VariableBox: FC<VariableBoxProps> = ({
                 </div>
             </div>
             <div className={styles.valueBox}>
-                {`${value} [${unit}]`}
+                {`${value} ${unit}`}
             </div>
         </div>
     );

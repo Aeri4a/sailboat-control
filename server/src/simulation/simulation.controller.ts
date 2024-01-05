@@ -5,7 +5,7 @@ import {
     Body,
 } from '@nestjs/common';
 
-import { BoatData, PythonEngineStatus } from 'src/types/common';
+import { SimulationInputData, PythonEngineStatus } from 'src/types/common';
 import { createFile, getFile } from 'src/common/file.helper';
 
 import { SimulationService } from './simulation.service';
@@ -15,7 +15,7 @@ export class SimulationController {
     constructor(private simulationService: SimulationService) {}
 
     @Post('/run')
-    async getSimulationData(@Body() inputData: BoatData) {
+    async getSimulationData(@Body() inputData: SimulationInputData) {
         console.log(
             `Preparing data for simulation...| Status: ${PythonEngineStatus.INITIALIZING}`,
         );
