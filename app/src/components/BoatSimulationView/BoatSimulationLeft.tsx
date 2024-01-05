@@ -160,7 +160,7 @@ const boatSimulationLeft: (ctxSide: CanvasRenderingContext2D, ctxFront: CanvasRe
     const H = boatData.hhtlr * L;
     const As = boatData.satlsr * L * L;
     const Hs = 3 * Math.sqrt(As / 6);
-    const Ak = boatData.katsar * As;
+    const Ak = boatData.katlsr * As;
     const Lk = Math.sqrt(Ak);
     const Dk = Lk;
     const Ar = boatData.ratsar * As;

@@ -40,7 +40,7 @@ const draw_background: (params: boatSimulationMainParams) => void = ({gl, webGLP
     
 
     gl.uniform1f(scaleLocation, 1/scale);
-    gl.uniform1f(windRotLocation, Math.atan2(simulationData?.windY[time] || 0, simulationData?.windX[time] || 0));
+    gl.uniform1f(windRotLocation, 1.5708);
 
     gl.uniform2f(resolutionLocation, w, h);
     gl.uniform2f(boatPosLocation, pos_x, pos_y);
