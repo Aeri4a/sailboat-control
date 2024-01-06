@@ -74,35 +74,35 @@ const ChartSection: FC = () => {
         const roll: ChartArrayValues[] = [];
         for (let i = 0; i < data?.positionX.length; i += 1200) {
             posX.push({
-                positionX: +data?.positionX[i].toFixed(0),
+                positionX: +data?.positionX[i],
                 time: i
             });
             posY.push({
-                positionY: +data?.positionY[i].toFixed(0),
+                positionY: +data?.positionY[i],
                 time: i
             });
             veloX.push({
-                velocityX: +data?.velocityX[i].toFixed(0),
+                velocityX: +data?.velocityX[i],
                 time: i
             });
             veloY.push({
-                velocityY: +data?.velocityY[i].toFixed(0),
+                velocityY: +data?.velocityY[i],
                 time: i
             });
             rudPos.push({
-                rudderPosition: +data?.rudderPosition[i].toFixed(0),
+                rudderPosition: +data?.rudderPosition[i],
                 time: i
             });
             sailPos.push({
-                sailPosition: +data?.sailPosition[i].toFixed(0),
+                sailPosition: +data?.sailPosition[i],
                 time: i
             });
             yaw.push({
-                yaw: +data?.yaw[i].toFixed(0),
+                yaw: +data?.yaw[i],
                 time: i
             });
             roll.push({
-                roll: +data?.roll[i].toFixed(0),
+                roll: +data?.roll[i],
                 time: i
             });
         }

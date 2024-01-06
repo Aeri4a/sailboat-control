@@ -32,6 +32,7 @@ const Chart: FC<ChartProps> = ({ xAxis, yAxis, data }) => {
                     dataKey={yAxis}
                     stroke={LINE_COLOR}
                     strokeWidth={3}
+                    activeDot={{ r: 6 }}
                 />
                 <Tooltip />
                 <Legend verticalAlign="top" />
@@ -44,7 +45,12 @@ const Chart: FC<ChartProps> = ({ xAxis, yAxis, data }) => {
                         fill={LINE_COLOR}
                     />
                 </XAxis>
-                <YAxis dataKey={yAxis} />
+                <YAxis
+                    dataKey={yAxis}
+                    tickSize={8}
+                    scale="linear"
+                    // ticks={}
+                />
             </LineChart>
         </ResponsiveContainer>
     );
