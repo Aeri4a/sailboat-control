@@ -18,5 +18,5 @@ export const initialTargetData: TargetData = {
     value: 2,
     maxValue: 3.14,
     minValue: 0.5,
-    step: 0.1
+    step: 0.01
 };

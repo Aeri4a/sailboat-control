@@ -10,16 +10,17 @@ import VariableBox from './components/VariableBox';
 import ButtonBox from './components/ButtonBox';
 import Slider from './components/Slider';
 import Loader from './components/Loader';
-import Charts from './components/Charts';
+import ChartSection from './components/ChartSection';
 
 import { BoatData, TargetData, WindData, Tab } from './types/commonTypes';
 
 import mapInputData from './utils/simulationInputMaper';
+import calcMinTargetValue from './utils/calcMinTargetValue';
 import boatVarList from './data/boatVarList';
 import windVarList from './data/windVarList';
 import { initialBoatData, initialTargetData, initialWindData } from './data/initialData';
 
-const activeTabStyle = { backgroundColor: '#1394ab', color: 'white' };
+const activeTabStyle = { backgroundColor: '#2e5886', color: 'white' };
 
 // CONSTANTS
 const FRAME_TIME = 100; // time between physics simulation steps [ms]
@@ -50,17 +51,26 @@ const App: FC = () => {
     .then(()=> {
         console.log('good');
         setAnimRun(true);
+        setActiveTab(Tab.STATISTICS);
     }).catch(err => {
         console.log('bad: ', err);
-    })
+    });
   }
   
   const handleStartAnimation = () => {
-    getSimulationData();
+    if (simulationData === null)
+      getSimulationData();
+    else
+      setAnimRun(true);
   };
   
   const handleStopAnimation = () => {
     setAnimRun(false);
+  };
+
+  const handleFetchAgain = () => {
+    setTimeStamp(0);
+    getSimulationData();
   };
 
   const handleBoatInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +84,28 @@ const App: FC = () => {
   const handleTargetInputDataChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTargetInputData(prevState => ({ ...prevState, value: +event.target.value }));
   };
+
+  useEffect(() => {
+    const allParameters = [
+      boatInputData.length,
+      boatInputData.wtlr,
+      boatInputData.hhtlr,
+      boatInputData.satlsr,
+      boatInputData.katlsr,
+      boatInputData.ratsar,
+      boatInputData.bmtuhm,
+      windInputData.sp
+    ];
+
+    const newMinTargetValue = +calcMinTargetValue(allParameters).toFixed(2);
+    const insertValue = newMinTargetValue > 3.14 ? 3.14 : newMinTargetValue;
+    setTargetInputData(prevState => ({
+      ...prevState,
+      minValue: insertValue,
+      value: +((prevState.maxValue + insertValue)/2).toFixed(2)
+    }));
+  }, [boatInputData, windInputData]);
+
 
   useEffect(() => {
     console.log(simulationData);
@@ -109,6 +141,7 @@ const App: FC = () => {
               <VariableSection subTitle='Boat'>
                 {boatVarList.map(variable => (
                   <VariableBox
+                    key={variable.defaultValue}
                     name={variable.shortName}
                     value={boatInputData[variable.shortName as keyof BoatData]}
                     onValueChange={handleBoatInputDataChange}
@@ -124,6 +157,7 @@ const App: FC = () => {
               <VariableSection subTitle='Wind'>
                 {windVarList.map(variable => (
                   <VariableBox
+                    key={variable.defaultValue}
                     name={variable.shortName}
                     value={windInputData[variable.shortName as keyof WindData]}
                     onValueChange={handleWindInputDataChange}
@@ -149,7 +183,7 @@ const App: FC = () => {
                   />
               </VariableSection>
               </div>)
-        : (<Charts/>)
+        : (<ChartSection/>)
         }
         
       </div>
@@ -161,6 +195,7 @@ const App: FC = () => {
                 startAction={handleStartAnimation}
                 pauseAction={handleStopAnimation}
                 restartAction={() => { setTimeStamp(0); }}
+                fetchAgainAction={handleFetchAgain}
               />
               <Slider
                 value={timeStamp}

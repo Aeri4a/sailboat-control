@@ -36,8 +36,8 @@
         width: 15px;
         background-color: white;
         border-radius: 50%;
-        border: 2px solid #1394ab;
-        box-shadow: -447px 0 0 440px #1394ab;
+        border: 2px solid #2e5886;
+        box-shadow: calc(-100vw - 7px) 0 0 100vw #2e5886;
     }
 
     &::-moz-range-thumb {
@@ -45,8 +45,8 @@
         width: 15px;
         background-color: white;
         border-radius: 50%;
-        border: 1px solid #1394ab;
-        box-shadow: -447px 0 0 440px #1394ab;
+        border: 1px solid #2e5886;
+        box-shadow: calc(-100vw - 7px) 0 0 100vw #2e5886;
     }
       
 }

@@ -26,7 +26,7 @@
 // HEADER & TITLE
 .header {
     width: 100%;
-    height: 80px;
+    min-height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -49,7 +49,7 @@
 
 .sectionSelect {
     width: 200px;
-    height: 60px;
+    height: 55px;
     display: flex;
     flex-basis: 50%;
     justify-content: space-between;

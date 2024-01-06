@@ -14,7 +14,7 @@ interface boatParams {
     R: number;
 }
 
-const waterColor = "#0052B5";
+const waterColor = "#2E5886";
 const sideColor = "#D8D8D8";
 const sailColor = "#ffffff";
 const hullBorderColor = "#666666";
