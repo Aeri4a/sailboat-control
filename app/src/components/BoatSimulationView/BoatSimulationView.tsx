@@ -80,9 +80,10 @@ const BoatSimulation: FC<BoatSimulationProps> = ({ time, frame_len, set_time, an
                 last_frame_stamp = currentTime;
             let time_diff = currentTime - last_frame_stamp;
             if(time_diff > frame_len){
+                localTimeRef.current++;
                 set_time(prev => prev + 1);
-                last_frame_stamp = currentTime;
-                time_diff = frame_len;
+                last_frame_stamp = last_frame_stamp + frame_len;
+                time_diff -= frame_len;
             }
             if(fix_dpi_required.current){
                 fix_dpi(canvas);
